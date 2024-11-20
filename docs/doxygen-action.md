@@ -145,7 +145,7 @@ For release documentation, create a separate workflow triggered by release event
 The action handles version management through the following rules:
 
 1. **Version Detection**:
-    - Reads base version from `PROJECT(VERSION X.Y.Z)` in CMakeLists.txt
+    - Reads base version from `PROJECT(VERSION X.Y.Z)` in `CMakeLists.txt`
     - Checks for `RC_VERSION` to determine if it's a release candidate
     - When neither is defined, treats as development (SNAPSHOT) version
 
