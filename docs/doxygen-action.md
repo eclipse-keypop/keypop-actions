@@ -7,16 +7,16 @@ navigation between versions, and proper organization of documentation artifacts.
 
 - **Automatic Version Detection**: Extracts version information from `CMakeLists.txt`
 - **Version Management**:
-    - Supports release versions (X.Y.Z)
-    - Handles release candidates (X.Y.Z-rcN)
-    - Manages development versions (X.Y.Z-SNAPSHOT)
+    - Supports release versions (`X.Y.Z`)
+    - Handles release candidates (`X.Y.Z-rcN`)
+    - Manages development versions (`X.Y.Z-SNAPSHOT`)
 - **Documentation Organization**:
     - Creates versioned documentation directories
     - Maintains "latest-stable" symlink
     - Generates version navigation
     - Handles cleanup of SNAPSHOT versions upon release
 - **Search Engine Optimization**:
-    - Generates appropriate robots.txt
+    - Generates appropriate `robots.txt`
     - Maintains clean URLs structure
     - Proper indexing of stable versions
 
@@ -71,9 +71,9 @@ repository-gh-pages/
 ├── 2.1.1-SNAPSHOT/      # Development version
 ├── 2.1.0-rc2/           # Release candidate
 ├── latest-stable/       # Symlink to latest stable version
-├── 2.1.0/              # Stable version
-├── list_versions.md    # Version listing
-└── robots.txt         # Search engine directives
+├── 2.1.0/               # Stable version
+├── list_versions.md     # Version listing
+└── robots.txt           # Search engine directives
 ```
 
 ### Workflow Examples
@@ -150,9 +150,9 @@ The action handles version management through the following rules:
     - When neither is defined, treats as development (SNAPSHOT) version
 
 2. **Version Types**:
-    - Release (X.Y.Z): Final, stable versions
-    - Release Candidate (X.Y.Z-rcN): Pre-release versions
-    - SNAPSHOT (X.Y.Z-SNAPSHOT): Development versions
+    - Release (`X.Y.Z`): Final, stable versions
+    - Release Candidate (`X.Y.Z-rcN`): Pre-release versions
+    - SNAPSHOT (`X.Y.Z-SNAPSHOT`): Development versions
 
 3. **Version Lifecycle**:
     - SNAPSHOT versions are replaced when their corresponding release is published
