@@ -75,9 +75,9 @@ class DocumentationManager:
     def _get_version_key(self, version_str: str) -> tuple:
         """
         Create a sortable key for version ordering that maintains the following order:
-        1. RC SNAPSHOT versions (newest RC first)
-        2. RC released versions
-        3. Base SNAPSHOT version
+        1. SNAPSHOT versions
+        2. RC versions (newest RC first)
+        3. Release versions
 
         Returns tuple of (major, minor, patch, version_type, rc_num)
         """
@@ -86,14 +86,12 @@ class DocumentationManager:
             v = parse(base_version)
             base = (v.major, v.minor, v.micro)
 
-            if "rc" in version_str.lower():
-                rc_num = int(version_str.lower().split("rc")[1].split("-")[0])
-                if "SNAPSHOT" in version_str:
-                    return base + (2, rc_num)
-                return base + (1, rc_num)
-            if "SNAPSHOT" in version_str:
+            if "-SNAPSHOT" in version_str:
                 return base + (0, 0)
-            return base + (3, 0)
+            elif "-rc" in version_str:
+                rc_num = int(version_str.lower().split("rc")[1].split("-")[0])
+                return base + (1, rc_num)
+            return base + (2, 0)
 
         except InvalidVersion:
             return (0, 0, 0, 999, 0)
@@ -149,24 +147,16 @@ class DocumentationManager:
                 shutil.rmtree(dest_dir)
 
             subprocess.run(["git", "clone", "-b", self.gh_pages_branch, self.repo_url, repo_name],
-                         check=True, capture_output=True)
+                           check=True, capture_output=True)
 
             os.chdir(dest_dir)
 
             logger.info("Processing SNAPSHOT directories...")
             if not version.endswith("-SNAPSHOT"):
-                if "-rc" in version:
-                    rc_snapshot = f"{version}-SNAPSHOT"
-                    snapshot_path = Path(rc_snapshot)
-                    if snapshot_path.exists():
-                        logger.info(f"Removing RC SNAPSHOT directory: {snapshot_path}")
-                        shutil.rmtree(snapshot_path)
-                else:
-                    version_snapshot = f"{version}-SNAPSHOT"
-                    snapshot_path = Path(version_snapshot)
-                    if snapshot_path.exists():
-                        logger.info(f"Removing version SNAPSHOT directory: {snapshot_path}")
-                        shutil.rmtree(snapshot_path)
+                # When publishing any version (RC or release), remove all SNAPSHOTS
+                for dir_path in Path('.').glob('*-SNAPSHOT'):
+                    logger.info(f"Removing SNAPSHOT directory: {dir_path}")
+                    shutil.rmtree(dir_path)
 
             logger.info(f"Create target directory {version}...")
             version_dir = Path(version)
