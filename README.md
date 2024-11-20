@@ -38,4 +38,4 @@ Please read our [contribution guidelines](https://keypop.org/community/contribut
 
 ## License
 
-This project is licensed under the Eclipse Public License - v 2.0. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
