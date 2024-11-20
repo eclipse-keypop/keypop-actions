@@ -1,0 +1,67 @@
+name: 'C++ API Documentation'
+description: 'Generate and publish Doxygen documentation'
+branding:
+  icon: 'book-open'
+  color: 'blue'
+inputs:
+  version:
+    description: 'Version to publish'
+    required: false
+  repo-name:
+    description: 'Repository name'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Show Action Version
+      shell: bash
+      run: |
+        echo "::group::Action Version Info"
+        echo "Using keypop-action-docs version: ${{ github.ref_name }}"
+        echo "SHA: ${{ github.sha }}"
+        echo "Action path: ${{ github.action_path }}"
+        echo "::endgroup::"
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        echo "Installing Python dependencies from ${{ github.action_path }}/scripts/requirements.txt"
+        python -m pip install --upgrade pip
+        pip install -r "${{ github.action_path }}/scripts/requirements.txt"
+
+    - name: Check version
+      if: inputs.version != ''
+      shell: bash
+      run: python ${{ github.action_path }}/scripts/check_version.py "${{ inputs.version }}"
+
+    - name: Patch Doxyfile
+      if: always()
+      shell: bash
+      run: python ${{ github.action_path }}/scripts/patch_doxyfile.py "/home/runner/work/${{ inputs.repo-name }}/${{ inputs.repo-name }}/.github/doxygen/Doxyfile" "${{ inputs.version }}"
+
+    - name: Copy Doxyfile and logo.svg
+      shell: bash
+      run: |
+        echo "Copying logo.svg from ${{ github.action_path }}/doxygen/ to /home/runner/work/${{ inputs.repo-name }}/${{ inputs.repo-name }}/.github/doxygen/"
+        cp -r "${{ github.action_path }}/doxygen/." "/home/runner/work/${{ inputs.repo-name }}/${{ inputs.repo-name }}/.github/doxygen/"
+
+    - name: Generate documentation
+      uses: mattnotmitt/doxygen-action@v1.9.2
+      with:
+        working-directory: .github/doxygen/
+        doxyfile-path: ./Doxyfile
+
+    - name: Prepare documentation
+      shell: bash
+      run: |
+        python ${{ github.action_path }}/scripts/prepare_documentation.py \
+          --github-org ${GITHUB_REPOSITORY_OWNER} \
+          --repo-name "${{ inputs.repo-name }}" \
+          --version "${{ inputs.version }}"
