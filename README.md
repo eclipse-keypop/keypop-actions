@@ -1,6 +1,6 @@
 # Eclipse Keypop GitHub Actions
 
-[![License](https://img.shields.io/badge/License-EPL_2.0-blue.svg)](https://www.eclipse.org/legal/epl-2.0/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Collection of GitHub Actions for automating various tasks in Eclipse Keypop libraries and projects.
 
