@@ -5,7 +5,8 @@ import re
 import subprocess
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
+from packaging.version import parse, Version
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,21 +20,39 @@ class VersionError(Exception):
 
 class VersionChecker:
     def __init__(self):
-        self.version_pattern = re.compile(r'^\d+\.\d+\.\d+(?:-rc\d+)?$')
+        # Base version (Java reference) pattern x.y.z
+        self.java_version_pattern = re.compile(r'^\d+\.\d+\.\d+$')
+        # Full version pattern (with optional C++ fix) x.y.z[.t]
+        self.version_pattern = re.compile(r'^\d+\.\d+\.\d+(?:\.\d+)?$')
+        # Pattern to extract the C++ fix number
+        self.cpp_fix_pattern = re.compile(r'^\d+\.\d+\.\d+\.(\d+)$')
 
     def validate_version(self, version: str) -> bool:
         """Validate version string format"""
         return bool(self.version_pattern.match(version))
 
+    def split_version(self, version: str) -> Tuple[str, Optional[str]]:
+        """Split version into Java reference version and C++ fix number"""
+        if not self.validate_version(version):
+            raise VersionError(f"Invalid version format: {version}")
+
+        cpp_fix_match = self.cpp_fix_pattern.match(version)
+        if cpp_fix_match:
+            # Split into Java version and C++ fix
+            java_version = version.rsplit('.', 1)[0]
+            cpp_fix = cpp_fix_match.group(1)
+            return java_version, cpp_fix
+        return version, None
+
     def _parse_cmake_version(self, cmake_file: Path) -> str:
         """
-        Extract version from CMakeLists.txt
+        Extract base version from CMakeLists.txt
 
         Args:
             cmake_file: Path to CMakeLists.txt
 
         Returns:
-            str: Version string in format X.Y.Z or X.Y.Z-rcN
+            str: Version string in format X.Y.Z[.T] (Java reference version with optional C++ fix)
 
         Raises:
             FileNotFoundError: If CMakeLists.txt doesn't exist
@@ -44,28 +63,18 @@ class VersionChecker:
 
         content = cmake_file.read_text()
 
-        project_version_pattern = r'PROJECT\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+)[^)]*\)'
+        # Updated pattern to capture optional fourth number
+        project_version_pattern = r'PROJECT\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+(?:\.\d+)?)[^)]*\)'
         version_match = re.search(project_version_pattern, content, re.MULTILINE | re.IGNORECASE)
 
         if not version_match:
             raise VersionError("Could not extract PROJECT VERSION")
 
         version = version_match.group(1)
-
-        rc_version = self._extract_rc_version(content)
-        if rc_version:
-            version = f"{version}-rc{rc_version}"
-
-        if not self.validate_version(version):
-            raise VersionError(f"Invalid version format: {version}")
+        if not self.version_pattern.match(version):
+            raise VersionError(f"Invalid version format in CMakeLists.txt: {version}")
 
         return version
-
-    def _extract_rc_version(self, content: str) -> Optional[str]:
-        """Extract RC version if present"""
-        rc_pattern = r'^[^#]*SET\s*\((?:RC_VERSION|CMAKE_PROJECT_VERSION_RC)\s*"(\d+)"\s*\)'
-        rc_match = re.search(rc_pattern, content, re.MULTILINE)
-        return rc_match.group(1) if rc_match else None
 
     def _run_git_command(self, args: list) -> str:
         """
@@ -93,8 +102,10 @@ class VersionChecker:
             VersionError: If versions don't match or version already exists
         """
         try:
-            version = self._parse_cmake_version(Path("CMakeLists.txt"))
-            logger.info(f"Version in CMakeLists.txt: '{version}'")
+            cmake_version = self._parse_cmake_version(Path("CMakeLists.txt"))
+            cmake_java_version, cmake_cpp_fix = self.split_version(cmake_version)
+            logger.info(f"Version in CMakeLists.txt: '{cmake_version}' (Java: {cmake_java_version}"
+                        f"{f', C++ fix: {cmake_cpp_fix}' if cmake_cpp_fix else ''})")
 
             if tag:
                 if not self.validate_version(tag):
@@ -103,19 +114,30 @@ class VersionChecker:
                 logger.info(f"Input tag: '{tag}'")
                 logger.info("Release mode: checking version consistency...")
 
-                if tag != version:
+                tag_java_version, tag_cpp_fix = self.split_version(tag)
+                if tag_java_version != cmake_java_version:
                     raise VersionError(
-                        f"Tag '{tag}' differs from version '{version}' in CMakeLists.txt"
+                        f"Tag Java version '{tag_java_version}' differs from version '{cmake_java_version}' in CMakeLists.txt"
+                    )
+                if tag_cpp_fix != cmake_cpp_fix:
+                    raise VersionError(
+                        f"Tag C++ fix version '{tag_cpp_fix}' differs from version '{cmake_cpp_fix}' in CMakeLists.txt"
                     )
                 logger.info(f"Version consistency check passed: '{tag}'")
             else:
                 logger.info("Snapshot mode: fetching tags...")
                 self._run_git_command(["fetch", "--tags"])
 
-                existing_tag = self._run_git_command(["tag", "-l", version])
-                if existing_tag:
-                    raise VersionError(f"Version '{version}' already released")
-                logger.info(f"Version '{version}' not yet released")
+                # Check if any version with this Java reference exists
+                existing_tags = self._run_git_command(["tag", "-l", f"{cmake_java_version}*"]).split('\n')
+                if existing_tags and any(tag.strip() for tag in existing_tags):
+                    if cmake_cpp_fix:
+                        # For C++ fixes, check if this specific fix version exists
+                        if cmake_version in existing_tags:
+                            raise VersionError(f"Version '{cmake_version}' already released")
+                    else:
+                        raise VersionError(f"Java reference version '{cmake_java_version}' or its C++ fixes already released")
+                logger.info(f"Version '{cmake_version}' not yet released")
 
         except (subprocess.CalledProcessError, FileNotFoundError, VersionError) as e:
             logger.error(str(e))
