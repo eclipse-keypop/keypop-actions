@@ -7,9 +7,9 @@ navigation between versions, and proper organization of documentation artifacts.
 
 - **Automatic Version Detection**: Extracts version information from `CMakeLists.txt`
 - **Version Management**:
-    - Supports release versions (`X.Y.Z`)
-    - Handles release candidates (`X.Y.Z-rcN`)
-    - Manages development versions (`X.Y.Z-SNAPSHOT`)
+    - Supports Java reference versions (`X.Y.Z`)
+    - Handles C++-specific fixes (`X.Y.Z.T`)
+    - Manages development versions (`X.Y.Z[.T]-SNAPSHOT`)
 - **Documentation Organization**:
     - Creates versioned documentation directories
     - Maintains "latest-stable" symlink
@@ -39,39 +39,31 @@ navigation between versions, and proper organization of documentation artifacts.
 ```cmake
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
-# Optional: Uncomment and modify when preparing a release candidate
-#SET(RC_VERSION "2")
-
 PROJECT(KeypopExample
-        VERSION 2.1.1
+        VERSION 2.1.1.1  # X.Y.Z[.T] format
         C CXX)
-
-# Version handling
-if(DEFINED RC_VERSION)
-    SET(PACKAGE_VERSION "${PROJECT_VERSION}-rc${RC_VERSION}")
-else()
-    SET(PACKAGE_VERSION "${PROJECT_VERSION}")
-endif()
 
 # Package information
 SET(PACKAGE_NAME "keypop-example")
+SET(PACKAGE_VERSION ${CMAKE_PROJECT_VERSION})
 SET(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 ```
 
 The version is determined as follows:
-- Base version is taken from the `PROJECT(VERSION X.Y.Z)`
-- If `RC_VERSION` is defined, it becomes `X.Y.Z-rcN`
-- If neither is present, it becomes `X.Y.Z-SNAPSHOT` for development builds
+- Version is taken directly from `PROJECT(VERSION X.Y.Z[.T])`
+    - X.Y.Z matches the Java reference version
+    - Optional T number indicates C++-specific fixes
+- Without explicit version parameter, it becomes `X.Y.Z[.T]-SNAPSHOT` for development builds
 
 #### Documentation Structure
 
 The action generates the following structure in your GitHub Pages:
 ```
 repository-gh-pages/
-├── 2.1.1-SNAPSHOT/      # Development version
-├── 2.1.0-rc2/           # Release candidate
+├── 2.1.1.1-SNAPSHOT/    # Development version with C++ fix
 ├── latest-stable/       # Symlink to latest stable version
-├── 2.1.0/               # Stable version
+├── 2.1.1.1/             # Stable version with C++ fix
+├── 2.1.1/               # Java reference version
 ├── list_versions.md     # Version listing
 └── robots.txt           # Search engine directives
 ```
@@ -145,16 +137,17 @@ For release documentation, create a separate workflow triggered by release event
 The action handles version management through the following rules:
 
 1. **Version Detection**:
-    - Reads base version from `PROJECT(VERSION X.Y.Z)` in `CMakeLists.txt`
-    - Checks for `RC_VERSION` to determine if it's a release candidate
-    - When neither is defined, treats as development (SNAPSHOT) version
+    - Reads version from `PROJECT(VERSION X.Y.Z[.T])` in `CMakeLists.txt`
+    - Without explicit version parameter, treats as development (SNAPSHOT) version
 
 2. **Version Types**:
-    - Release (`X.Y.Z`): Final, stable versions
-    - Release Candidate (`X.Y.Z-rcN`): Pre-release versions
-    - SNAPSHOT (`X.Y.Z-SNAPSHOT`): Development versions
+    - Base version (`X.Y.Z`): Matches Java reference version
+    - Fix version (`X.Y.Z.T`): C++-specific fixes for Java version X.Y.Z
+    - SNAPSHOT (`X.Y.Z[.T]-SNAPSHOT`): Development versions
 
 3. **Version Lifecycle**:
     - SNAPSHOT versions are replaced when their corresponding release is published
-    - RC versions can exist alongside their base versions
+    - All non-SNAPSHOT versions are considered stable
     - Latest stable version is always accessible via the `latest-stable` symlink
+    - The fourth number (T) represents C++-specific fixes for a given Java version
+    - A version can't have both released and SNAPSHOT states at the same time
