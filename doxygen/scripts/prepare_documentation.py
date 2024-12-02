@@ -132,8 +132,9 @@ class DocumentationManager:
             for version in sorted_versions:
                 # Write latest-stable first if this is the stable version
                 if version == latest_stable:
-                    f.write(f"| latest-stable ({latest_stable}) | [API documentation](latest-stable) |\n")
-                f.write(f"| {version} | [API documentation]({version}) |\n")
+                    f.write(f"| **latest-stable ({latest_stable})** | [API documentation](latest-stable) |\n")
+                else:
+                    f.write(f"| {version} | [API documentation]({version}) |\n")
 
     def prepare_documentation(self, version: str = None):
         """
