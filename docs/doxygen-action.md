@@ -1,6 +1,6 @@
 # Keypop Doxygen Documentation Action
 
-Action for generating and publishing C++ API reference documentation using Doxygen. This action handles versioning,
+Action for generating C++ API reference documentation using Doxygen. This action handles versioning,
 navigation between versions, and proper organization of documentation artifacts.
 
 #### Features
@@ -57,15 +57,14 @@ The version is determined as follows:
 
 #### Documentation Structure
 
-The action generates the following structure in your GitHub Pages:
+The action generates the following structure in the doc branch:
 ```
-repository-gh-pages/
+repository-doc/
 ├── 2.1.1.1-SNAPSHOT/    # Development version with C++ fix
 ├── latest-stable/       # Symlink to latest stable version
-├── 2.1.1.1/             # Stable version with C++ fix
-├── 2.1.1/               # Java reference version
-├── list_versions.md     # Version listing
-└── robots.txt           # Search engine directives
+├── 2.1.1.1/            # Stable version with C++ fix
+├── 2.1.1/              # Java reference version
+└── list_versions.md    # Version listing
 ```
 
 ### Workflow Examples
@@ -104,33 +103,21 @@ jobs:
           repo-name: ${{ steps.repo-info.outputs.repo_name }}
           version: ${{ steps.repo-info.outputs.version }}
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./${{ github.event.repository.name }}
-          enable_jekyll: true
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'docs: update ${{ steps.repo-info.outputs.version }} documentation'
+      - name: Deploy to doc branch
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          cd ${{ steps.repo-info.outputs.repo_name }}
+          git add .
+          git commit -m "docs: update ${{ steps.repo-info.outputs.version }} documentation"
+          git push origin doc --force
 ```
 
 This workflow is triggered when a release is published. It:
 1. Checks out the repository with full history
 2. Extracts the repository name and release version from the git tag
 3. Generates the documentation using the specified version
-4. Deploys the generated documentation to GitHub Pages
-
-#### Publishing Documentation on Release
-
-For release documentation, create a separate workflow triggered by release events. The workflow is similar but includes the version parameter:
-
-```yaml
-- uses: eclipse-keypop/actions/doxygen@v1
-  with:
-    version: ${{ steps.repo-info.outputs.version }}
-    repo-name: ${{ steps.repo-info.outputs.repo_name }}
-```
+4. Deploys the generated documentation to the doc branch
 
 ## Version Management
 

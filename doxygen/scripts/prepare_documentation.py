@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class DocumentationManager:
     def __init__(self, github_org: str, repo_name: str):
         self.repo_url = f"https://github.com/{github_org}/{repo_name}.git"
-        self.gh_pages_branch = "gh-pages"
+        self.doc_branch = "doc"
         self.version_pattern = re.compile(r'^\d+\.\d+\.\d+(?:\.\d+)?$')
         self.lock_file = Path("/tmp/doc_manager.lock")
 
@@ -163,7 +163,7 @@ class DocumentationManager:
             if dest_dir.exists():
                 shutil.rmtree(dest_dir)
 
-            subprocess.run(["git", "clone", "-b", self.gh_pages_branch, self.repo_url, repo_name],
+            subprocess.run(["git", "clone", "-b", self.doc_branch, self.repo_url, repo_name],
                            check=True, capture_output=True)
 
             os.chdir(dest_dir)
