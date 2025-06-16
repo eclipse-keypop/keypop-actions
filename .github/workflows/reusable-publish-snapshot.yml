@@ -57,8 +57,8 @@ jobs:
           echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Update documentation branch
-        uses: ./.github/actions/update-doc-branch@update-doc-branch-v1
+        uses: eclipse-keypop/keypop-actions/actions/update-doc-branch@update-doc-branch-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
-          keypop-version: ${{ steps.metadata.outputs.project-version }}
+          project-version: ${{ steps.metadata.outputs.project-version }}
           deploy-type: snapshot

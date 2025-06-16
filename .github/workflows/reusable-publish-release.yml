@@ -19,8 +19,6 @@ jobs:
     env:
       JAVA_VERSION: ${{ inputs.java-version }}
       JAVA_DISTRIBUTION: ${{ inputs.java-distribution }}
-      NAMESPACE: ${{ inputs.namespace }}
-      SONATYPE_DEPLOY_URL: https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/
 
     steps:
       - name: Checkout source code
@@ -70,7 +68,7 @@ jobs:
 
       - name: Build and publish release
         env:
-          ORG_GRADLE_PROJECT_sonatypeURL: ${{ env.SONATYPE_DEPLOY_URL }}
+          ORG_GRADLE_PROJECT_sonatypeURL: https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
           ORG_GRADLE_PROJECT_releaseTag: ${{ github.event.release.tag_name }}
@@ -83,7 +81,7 @@ jobs:
           curl -X POST \
             -H "Authorization: Bearer $(echo -n '${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}' | base64)" \
             -H "Content-Type: application/json" \
-            https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${{ env.NAMESPACE }}?publishing_type=automatic
+            https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${{ inputs.namespace }}?publishing_type=automatic
 
       - name: Upload artifacts to Eclipse server
         uses: eclipse-keypop/keypop-actions/actions/deploy-to-eclipse@deploy-to-eclipse-v1
@@ -93,8 +91,8 @@ jobs:
           version-type: releases
 
       - name: Update documentation branch
-        uses: ./.github/actions/update-doc-branch@update-doc-branch-v1
+        uses: eclipse-keypop/keypop-actions/actions/update-doc-branch@update-doc-branch-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
-          keypop-version: ${{ steps.metadata.outputs.project-version }}
+          project-version: ${{ github.event.release.tag_name }}
           deploy-type: release

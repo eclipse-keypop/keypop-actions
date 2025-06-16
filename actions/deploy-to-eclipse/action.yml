@@ -7,9 +7,9 @@ inputs:
   ssh-passphrase:
     required: true
     description: Passphrase for the SSH private key
-  version-type:
+  is-release:
     required: true
-    description: Either "releases" or "snapshots"
+    description: "true" if this is a release; otherwise "false"
 
 runs:
   using: "composite"
@@ -34,9 +34,19 @@ runs:
         echo "Artifacts found:"
         ls -l repository/
 
+    - name: Determine upload target
+      id: context
+      shell: bash
+      run: |
+        if [ "${{ inputs.is-release }}" = "true" ]; then
+          echo "version_type=releases" >> $GITHUB_OUTPUT
+        else
+          echo "version_type=snapshots" >> $GITHUB_OUTPUT
+        fi
+
     - name: Upload artifacts to Eclipse server
       shell: bash
       run: |
-        echo "Uploading to: ${{ inputs.version-type }}"
-        ssh genie.keypop@projects-storage.eclipse.org "rm -rf /home/data/httpd/download.eclipse.org/keypop/${{ inputs.version-type }} && mkdir -p /home/data/httpd/download.eclipse.org/keypop/${{ inputs.version-type }}"
-        scp -r repository/* genie.keypop@projects-storage.eclipse.org:/home/data/httpd/download.eclipse.org/keypop/${{ inputs.version-type }}
+        echo "Uploading to: ${{ steps.context.outputs.version_type }}"
+        ssh genie.keypop@projects-storage.eclipse.org "rm -rf /home/data/httpd/download.eclipse.org/keypop/${{ steps.context.outputs.version_type }} && mkdir -p /home/data/httpd/download.eclipse.org/keypop/${{ steps.context.outputs.version_type }}"
+        scp -r repository/* genie.keypop@projects-storage.eclipse.org:/home/data/httpd/download.eclipse.org/keypop/${{ steps.context.outputs.version_type }}

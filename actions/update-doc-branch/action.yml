@@ -1,14 +1,15 @@
 name: Update documentation branch
 description: Generate and push Javadoc to the `doc` branch
+
 inputs:
   project-name:
     description: Project name
     required: true
-  keypop-version:
+  project-version:
     description: Project version
     required: true
-  deploy-type:
-    description: Type of deploy (snapshot or release)
+  is-release:
+    description: "true" if this is a release; otherwise false
     required: true
 
 runs:
@@ -17,7 +18,10 @@ runs:
     - name: Run prepare_javadoc.sh
       shell: bash
       run: |
-        .github/actions/update-doc-branch/scripts/prepare_javadoc.sh "${{ inputs.project-name }}" "${{ inputs.keypop-version }}" "${{ inputs.deploy-type == 'snapshot' }}"
+        eclipse-keypop/keypop-actions/actions/update-doc-branch/scripts/prepare_javadoc.sh \
+          "${{ inputs.project-name }}" \
+          "${{ inputs.project-version }}" \
+          "${{ inputs.is-release }}" 
 
     - name: Commit and push Javadoc to doc branch
       shell: bash
