@@ -1,0 +1,29 @@
+name: Test Eclipse Upload Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        description: 'Type of version to test (releases or snapshots)'
+        required: true
+        default: 'snapshots'
+
+jobs:
+  test-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dummy JAR for testing
+        run: |
+          mkdir -p dummy/build/libs
+          echo "This is a dummy jar" > dummy/build/libs/test.jar
+
+      - name: Upload artifacts to Eclipse server (dry run)
+        uses: ./.github/actions/deploy-to-eclipse
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          version-type: ${{ github.event.inputs.version-type }}
