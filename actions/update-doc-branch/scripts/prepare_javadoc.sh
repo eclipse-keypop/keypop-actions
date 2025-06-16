@@ -4,12 +4,6 @@ echo "Compute the current API version..."
 
 repository_name=$1
 version=$2
-is_release=$3
-
-if [ "$is_release" != true ]
-then
-  version="$version-SNAPSHOT"
-fi
 
 echo "Computed current API version: $version"
 

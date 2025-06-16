@@ -58,4 +58,3 @@ jobs:
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ steps.metadata.outputs.project-version }}
-          is-release: false

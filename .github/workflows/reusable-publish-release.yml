@@ -92,4 +92,3 @@ jobs:
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ github.event.release.tag_name }}
-          is-release: true

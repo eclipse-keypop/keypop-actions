@@ -8,9 +8,6 @@ inputs:
   project-version:
     description: Project version
     required: true
-  is-release:
-    description: "true" if this is a release; otherwise false
-    required: true
 
 runs:
   using: "composite"
@@ -20,8 +17,7 @@ runs:
       run: |
         eclipse-keypop/keypop-actions/actions/update-doc-branch/scripts/prepare_javadoc.sh \
           "${{ inputs.project-name }}" \
-          "${{ inputs.project-version }}" \
-          "${{ inputs.is-release }}" 
+          "${{ inputs.project-version }}"
 
     - name: Commit and push Javadoc to doc branch
       shell: bash
