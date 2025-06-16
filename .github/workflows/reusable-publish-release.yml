@@ -32,9 +32,6 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
-      - name: Set project version from release tag
-        run: echo "VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
-
       - name: Retrieve fingerprint of the signing subkey
         id: fingerprint
         run: |
@@ -55,10 +52,10 @@ jobs:
           ORG_GRADLE_PROJECT_sonatypeURL: ${{ env.SONATYPE_DEPLOY_URL }}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          ORG_GRADLE_PROJECT_releaseTag: ${{ github.event.release.tag_name }}
         run: |
           echo "Building and publishing release package..."
-          ./gradlew build publish -PRELEASE --info --stacktrace
+          ./gradlew build publish --info --stacktrace
 
       - name: Trigger manual upload to Central
         run: |
