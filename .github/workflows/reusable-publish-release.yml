@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       java-version:
-        default: '21'
+        default: '17'
         type: string
       java-distribution:
         default: 'temurin'
