@@ -43,9 +43,6 @@ jobs:
     uses: eclipse-keypop/keypop-actions/.github/workflows/reusable-publish-snapshot.yml@publish-snapshot-v1
     with:
       artifact: build/libs/mylib.jar
-    secrets:
-      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-      OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
 ````
 
 ### 2. Using a composite action
