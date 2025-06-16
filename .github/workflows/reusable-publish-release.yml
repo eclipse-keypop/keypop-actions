@@ -27,6 +27,9 @@ jobs:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.java-distribution }}
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
       - name: Extract project name and version
         id: metadata
         run: |

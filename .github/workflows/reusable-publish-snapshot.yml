@@ -29,6 +29,14 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Extract project name and version
+        id: metadata
+        run: |
+          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
+          PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
+          echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
       - name: Build and publish snapshot to Maven Central
         env:
           ORG_GRADLE_PROJECT_sonatypeURL: https://central.sonatype.com/repository/maven-snapshots/
@@ -44,14 +52,6 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
           is-release: false
-
-      - name: Extract project name and version
-        id: metadata
-        run: |
-          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
-          PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
-          echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
-          echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Update documentation branch
         uses: eclipse-keypop/keypop-actions/actions/update-doc-branch@update-doc-branch-v1

@@ -12,6 +12,9 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Make prepare_javadoc.sh executable
+      run: chmod +x eclipse-keypop/keypop-actions/actions/update-doc-branch/scripts/prepare_javadoc.sh
+
     - name: Run prepare_javadoc.sh
       shell: bash
       run: |
