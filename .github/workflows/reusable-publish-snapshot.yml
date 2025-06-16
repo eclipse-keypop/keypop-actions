@@ -15,19 +15,16 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      JAVA_VERSION: ${{ inputs.java-version }}
-      JAVA_DISTRIBUTION: ${{ inputs.java-distribution }}
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
+      - name: Set up JDK ${{ inputs.java-version }}
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ inputs.java-version }}
+          distribution: ${{ inputs.java-distribution }}
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
