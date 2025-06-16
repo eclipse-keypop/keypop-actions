@@ -43,7 +43,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          version-type: snapshots
+          is-release: false
 
       - name: Extract project name and version
         id: metadata
@@ -58,4 +58,4 @@ jobs:
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ steps.metadata.outputs.project-version }}
-          deploy-type: snapshot
+          is-release: false

@@ -85,11 +85,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          version-type: releases
+          is-release: true
 
       - name: Update documentation branch
         uses: eclipse-keypop/keypop-actions/actions/update-doc-branch@update-doc-branch-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ github.event.release.tag_name }}
-          deploy-type: release
+          is-release: true
