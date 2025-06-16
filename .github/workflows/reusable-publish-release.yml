@@ -47,6 +47,35 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
           fingerprint: ${{ steps.fingerprint.outputs.fingerprint }}
 
+      - name: Extract project name and version
+        id: metadata
+        run: |
+          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
+          PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
+          echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Extract project name and version
+        id: metadata
+        run: |
+          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
+          PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
+          echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Validate that releaseTag matches project version
+        run: |
+          EXPECTED_VERSION="${{ github.event.release.tag_name }}-SNAPSHOT"
+          ACTUAL_VERSION="${{ steps.metadata.outputs.project-version }}"
+
+          echo "Expected version: $EXPECTED_VERSION"
+          echo "Actual version from build.gradle: $ACTUAL_VERSION"
+
+          if [ "$EXPECTED_VERSION" != "$ACTUAL_VERSION" ]; then
+            echo "::error::Mismatch between release tag and project version"
+            exit 1
+          fi
+
       - name: Build and publish release
         env:
           ORG_GRADLE_PROJECT_sonatypeURL: ${{ env.SONATYPE_DEPLOY_URL }}
@@ -74,6 +103,6 @@ jobs:
       - name: Update documentation branch
         uses: ./.github/actions/update-doc-branch@update-doc-branch-v1
         with:
-          project-name: ${{ inputs.project-name }}
-          keypop-version: ${{ github.event.release.tag_name }}
+          project-name: ${{ steps.metadata.outputs.project-name }}
+          keypop-version: ${{ steps.metadata.outputs.project-version }}
           deploy-type: release
