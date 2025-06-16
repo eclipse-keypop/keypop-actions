@@ -32,6 +32,27 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
+      - name: Extract project name and version
+        id: metadata
+        run: |
+          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
+          PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
+          echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check version
+        run: |
+          EXPECTED_PROJECT_VERSION="${{ github.event.release.tag_name }}-SNAPSHOT"
+          ACTUAL_PROJECT_VERSION="${{ steps.metadata.outputs.project-version }}"
+
+          echo "Expected project version: $EXPECTED_PROJECT_VERSION"
+          echo "Actual project version from gradle.properties: $ACTUAL_PROJECT_VERSION"
+
+          if [ "$EXPECTED_PROJECT_VERSION" != "$ACTUAL_PROJECT_VERSION" ]; then
+            echo "::error::Mismatch between release tag and project version"
+            exit 1
+          fi
+
       - name: Retrieve fingerprint of the signing subkey
         id: fingerprint
         run: |
@@ -46,27 +67,6 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
           fingerprint: ${{ steps.fingerprint.outputs.fingerprint }}
-
-      - name: Extract project name and version
-        id: metadata
-        run: |
-          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
-          PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
-          echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
-          echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Validate that releaseTag matches project version
-        run: |
-          EXPECTED_VERSION="${{ github.event.release.tag_name }}-SNAPSHOT"
-          ACTUAL_VERSION="${{ steps.metadata.outputs.project-version }}"
-
-          echo "Expected version: $EXPECTED_VERSION"
-          echo "Actual version from build.gradle: $ACTUAL_VERSION"
-
-          if [ "$EXPECTED_VERSION" != "$ACTUAL_VERSION" ]; then
-            echo "::error::Mismatch between release tag and project version"
-            exit 1
-          fi
 
       - name: Build and publish release
         env:
