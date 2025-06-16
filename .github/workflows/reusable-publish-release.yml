@@ -57,7 +57,7 @@ jobs:
           echo "Building and publishing release package..."
           ./gradlew build publish --info --stacktrace
 
-      - name: Trigger manual upload to Central
+      - name: Trigger automatic upload to Maven Central
         run: |
           curl -X POST \
             -H "Authorization: Bearer $(echo -n '${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}' | base64)" \
@@ -70,3 +70,10 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
           version-type: releases
+
+      - name: Update documentation branch
+        uses: ./.github/actions/update-doc-branch@update-doc-branch-v1
+        with:
+          project-name: ${{ inputs.project-name }}
+          keypop-version: ${{ github.event.release.tag_name }}
+          deploy-type: release
