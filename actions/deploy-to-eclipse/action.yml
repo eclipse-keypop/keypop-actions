@@ -9,7 +9,7 @@ inputs:
     description: Passphrase for the SSH private key
   is-release:
     required: true
-    description: "true" if this is a release; otherwise "false"
+    description: true if this is a release, otherwise false
 
 runs:
   using: "composite"
