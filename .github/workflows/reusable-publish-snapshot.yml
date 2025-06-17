@@ -11,6 +11,17 @@ on:
         required: false
         default: 'temurin'
         type: string
+    secrets:
+      CENTRAL_SONATYPE_TOKEN_USERNAME:
+        required: true
+      CENTRAL_SONATYPE_TOKEN_PASSWORD:
+        required: true
+      SSH_PRIVATE_KEY:
+        required: true
+      SSH_PASSPHRASE:
+        required: true
+      ORG_GITHUB_BOT_TOKEN:
+        required: true
 
 jobs:
   reusable-publish-snapshot:
@@ -58,3 +69,4 @@ jobs:
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ steps.metadata.outputs.project-version }}
+          github-bot-token: ${{ secrets.ORG_GITHUB_BOT_TOKEN }}

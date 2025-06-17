@@ -8,6 +8,9 @@ inputs:
   project-version:
     description: Project version
     required: true
+  github-bot-token:
+    description: GitHub bot token (used for authentication)
+    required: true
 
 runs:
   using: "composite"
@@ -23,6 +26,7 @@ runs:
         echo "::endgroup::"
 
     - name: Make prepare_javadoc.sh executable
+      shell: bash
       run: chmod +x ${{ github.action_path }}/scripts/prepare_javadoc.sh
 
     - name: Run prepare_javadoc.sh
@@ -41,11 +45,11 @@ runs:
         git config user.name "${{ inputs.project-name }}-bot"
         git commit --allow-empty -m "docs: update documentation $GITHUB_WORKFLOW-$GITHUB_RUN_NUMBER"
         git log --graph --abbrev-commit --date=relative -n 5
-        git push "https://${{ secrets.GH_BOT_USERNAME }}:${{ secrets.GH_BOT_TOKEN }}@github.com/eclipse-keypop/${{ inputs.project-name }}.git" HEAD:doc
+        git push "https://${{ inputs.github-bot-token }}@github.com/eclipse-keypop/${{ inputs.project-name }}.git" HEAD:doc
 
     - name: Trigger central documentation update
       uses: peter-evans/repository-dispatch@v3
       with:
-        token: ${{ secrets.ORG_GITHUB_BOT_TOKEN }}
+        token: ${{ inputs.github-bot-token }}
         repository: eclipse-keypop/keypop-api-docs
         event-type: update-submodules

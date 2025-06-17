@@ -12,6 +12,21 @@ on:
       namespace:
         default: 'org.eclipse.keypop'
         type: string
+    secrets:
+      CENTRAL_SONATYPE_TOKEN_USERNAME:
+        required: true
+      CENTRAL_SONATYPE_TOKEN_PASSWORD:
+        required: true
+      GPG_PRIVATE_KEY:
+        required: true
+      GPG_PASSPHRASE:
+        required: true
+      SSH_PRIVATE_KEY:
+        required: true
+      SSH_PASSPHRASE:
+        required: true
+      ORG_GITHUB_BOT_TOKEN:
+        required: true
 
 jobs:
   reusable-publish-release:
@@ -95,3 +110,4 @@ jobs:
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ github.event.release.tag_name }}
+          github-bot-token: ${{ secrets.ORG_GITHUB_BOT_TOKEN }}
