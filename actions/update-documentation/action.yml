@@ -13,12 +13,12 @@ runs:
   using: "composite"
   steps:
     - name: Make prepare_javadoc.sh executable
-      run: chmod +x eclipse-keypop/keypop-actions/actions/update-doc-branch/scripts/prepare_javadoc.sh
+      run: chmod +x eclipse-keypop/keypop-actions/actions/update-documentation/scripts/prepare_javadoc.sh
 
     - name: Run prepare_javadoc.sh
       shell: bash
       run: |
-        eclipse-keypop/keypop-actions/actions/update-doc-branch/scripts/prepare_javadoc.sh \
+        eclipse-keypop/keypop-actions/actions/update-documentation/scripts/prepare_javadoc.sh \
           "${{ inputs.project-name }}" \
           "${{ inputs.project-version }}"
 
@@ -32,3 +32,10 @@ runs:
         git commit --allow-empty -m "docs: update documentation $GITHUB_WORKFLOW-$GITHUB_RUN_NUMBER"
         git log --graph --abbrev-commit --date=relative -n 5
         git push "https://${{ secrets.GH_BOT_USERNAME }}:${{ secrets.GH_BOT_TOKEN }}@github.com/eclipse-keypop/${{ inputs.project-name }}.git" HEAD:doc
+
+    - name: Trigger central documentation update
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.ORG_GITHUB_BOT_TOKEN }}
+        repository: eclipse-keypop/keypop-api-docs
+        event-type: update-submodules

@@ -54,7 +54,7 @@ jobs:
           is-release: false
 
       - name: Update documentation branch
-        uses: eclipse-keypop/keypop-actions/actions/update-doc-branch@update-doc-branch-v1
+        uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ steps.metadata.outputs.project-version }}
