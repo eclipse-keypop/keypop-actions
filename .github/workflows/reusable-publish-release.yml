@@ -14,7 +14,7 @@ on:
         type: string
 
 jobs:
-  publish:
+  reusable-publish-release:
     runs-on: ubuntu-latest
 
     steps:
