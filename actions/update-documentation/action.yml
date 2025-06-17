@@ -12,13 +12,23 @@ inputs:
 runs:
   using: "composite"
   steps:
+
+    - name: Show Action Version
+      shell: bash
+      run: |
+        echo "::group::Action Version Info"
+        echo "Using keypop-actions version: ${{ env.GITHUB_ACTION_REF }}"
+        echo "SHA: ${{ github.sha }}"
+        echo "Action path: ${{ github.action_path }}"
+        echo "::endgroup::"
+
     - name: Make prepare_javadoc.sh executable
-      run: chmod +x eclipse-keypop/keypop-actions/actions/update-documentation/scripts/prepare_javadoc.sh
+      run: chmod +x ${{ github.action_path }}/scripts/prepare_javadoc.sh
 
     - name: Run prepare_javadoc.sh
       shell: bash
       run: |
-        eclipse-keypop/keypop-actions/actions/update-documentation/scripts/prepare_javadoc.sh \
+        ${{ github.action_path }}/scripts/prepare_javadoc.sh \
           "${{ inputs.project-name }}" \
           "${{ inputs.project-version }}"
 

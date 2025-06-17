@@ -53,7 +53,7 @@ jobs:
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
           is-release: false
 
-      - name: Update documentation branch
+      - name: Update documentation
         uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
