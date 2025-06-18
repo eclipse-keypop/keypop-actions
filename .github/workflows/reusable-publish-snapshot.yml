@@ -43,7 +43,7 @@ jobs:
       - name: Extract project name and version
         id: metadata
         run: |
-          PROJECT_NAME=$(./gradlew -q properties | grep "^rootProject:" | awk '{print $2}')
+          PROJECT_NAME=$(./gradlew -q properties | grep "^name:" | awk '{print $2}')
           PROJECT_VERSION=$(./gradlew -q properties | grep "^version:" | awk '{print $2}')
           echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
