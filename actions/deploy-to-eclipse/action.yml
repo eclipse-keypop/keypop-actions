@@ -7,6 +7,9 @@ inputs:
   ssh-passphrase:
     required: true
     description: Passphrase for the SSH private key
+  ssh-username:
+    required: true
+    description: Username for the SSH connection
   is-release:
     required: true
     description: true if this is a release, otherwise false
