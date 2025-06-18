@@ -103,6 +103,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          ssh-username: ${{ secrets.SSH_USERNAME }}
           is-release: true
 
       - name: Update documentation

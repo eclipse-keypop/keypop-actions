@@ -14,18 +14,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up SSH key
-      shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        eval $(ssh-agent)
-        echo "$SSH_PASSPHRASE" | SSH_ASKPASS=/bin/false ssh-add ~/.ssh/id_rsa
-        ssh-keyscan projects-storage.eclipse.org >> ~/.ssh/known_hosts
-      env:
-        SSH_PASSPHRASE: ${{ inputs.ssh-passphrase }}
-
     - name: Create repository folder and collect JARs
       shell: bash
       run: |
@@ -44,9 +32,44 @@ runs:
           echo "version_type=snapshots" >> $GITHUB_OUTPUT
         fi
 
-    - name: Upload artifacts to Eclipse server
+    - name: Connect and upload artifacts
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}
+        SSH_PASSPHRASE: ${{ inputs.ssh-passphrase }}
+        SSH_USERNAME: ${{ inputs.ssh-username }}
+        VERSION_TYPE: ${{ steps.context.outputs.version_type }}
       shell: bash
       run: |
-        echo "Uploading to: ${{ steps.context.outputs.version_type }}"
-        ssh genie.keypop@projects-storage.eclipse.org "rm -rf /home/data/httpd/download.eclipse.org/keypop/${{ steps.context.outputs.version_type }} && mkdir -p /home/data/httpd/download.eclipse.org/keypop/${{ steps.context.outputs.version_type }}"
-        scp -r repository/* genie.keypop@projects-storage.eclipse.org:/home/data/httpd/download.eclipse.org/keypop/${{ steps.context.outputs.version_type }}
+        set -e # Stop the script at the first error
+        
+        echo "--- Installing prerequisites ---"
+        sudo apt-get update && sudo apt-get install -y expect openssh-client
+
+        echo "--- Starting SSH agent and adding key ---"
+        eval "$(ssh-agent -s)"
+
+        echo "$SSH_PRIVATE_KEY" > id_rsa
+        chmod 600 id_rsa
+        
+        expect << EOF
+        spawn ssh-add id_rsa
+        expect "Enter passphrase"
+        send "$SSH_PASSPHRASE\r"
+        expect eof
+        EOF
+        
+        echo "Key added to agent:"
+        ssh-add -l
+
+        echo "--- Adding server to known hosts ---"
+        mkdir -p ~/.ssh
+        ssh-keyscan projects-storage.eclipse.org >> ~/.ssh/known_hosts
+
+        echo "--- Uploading to: $VERSION_TYPE ---"
+        # Remote directory creation
+        ssh $SSH_USERNAME@projects-storage.eclipse.org "rm -rf /home/data/httpd/download.eclipse.org/keypop/$VERSION_TYPE && mkdir -p /home/data/httpd/download.eclipse.org/keypop/$VERSION_TYPE"
+        
+        # Sending files
+        scp -r repository/* $SSH_USERNAME@projects-storage.eclipse.org:/home/data/httpd/download.eclipse.org/keypop/$VERSION_TYPE
+        
+        echo "--- Upload complete ---"
