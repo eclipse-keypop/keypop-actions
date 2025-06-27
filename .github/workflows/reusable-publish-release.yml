@@ -21,8 +21,6 @@ on:
         required: true
       GPG_PASSPHRASE:
         required: true
-      GPG_SUBKEY_ID:
-        required: true
       SSH_PRIVATE_KEY:
         required: true
       SSH_PASSPHRASE:
@@ -68,12 +66,20 @@ jobs:
             exit 1
           fi
 
+      - name: Retrieve fingerprint of the signing subkey
+        id: fingerprint
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
+          gpg --batch --import private.key
+          fingerprint=$(gpg --list-keys --with-subkey-fingerprint | awk '/^sub/ {getline; print $1}')
+          echo "fingerprint=$fingerprint" >> $GITHUB_OUTPUT
+
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          fingerprint: ${{ secrets.GPG_SUBKEY_ID }}
+          fingerprint: ${{ steps.fingerprint.outputs.fingerprint }}
 
       - name: Build and publish release
         env:
