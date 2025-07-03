@@ -16,10 +16,6 @@ on:
         required: true
       CENTRAL_SONATYPE_TOKEN_PASSWORD:
         required: true
-      SSH_PRIVATE_KEY:
-        required: true
-      SSH_PASSPHRASE:
-        required: true
       ORG_GITHUB_BOT_TOKEN:
         required: true
 
@@ -56,14 +52,6 @@ jobs:
         run: |
           echo "Building and publishing snapshot package..."
           ./gradlew build publish --info --stacktrace
-
-      - name: Upload artifacts to Eclipse server
-        uses: eclipse-keypop/keypop-actions/actions/deploy-to-eclipse@deploy-to-eclipse-v1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          ssh-username: ${{ secrets.SSH_USERNAME }}
-          is-release: false
 
       - name: Update documentation
         uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1
