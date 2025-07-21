@@ -3,6 +3,10 @@ name: Reusable - Publish Release to Maven Central
 on:
   workflow_call:
     inputs:
+      runner:
+        required: false
+        default: 'ubuntu-latest'
+        type: string
       java-version:
         default: '17'
         type: string
@@ -26,7 +30,7 @@ on:
 
 jobs:
   reusable-publish-release:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
 
     steps:
       - name: Checkout source code
@@ -89,10 +93,24 @@ jobs:
 
       - name: Trigger automatic upload to Maven Central
         run: |
-          curl -X POST \
+          echo "Triggering upload to Maven Central..."
+          response_file=$(mktemp)
+          response_code=$(curl -v --connect-timeout 30 --max-time 300 -X POST \
             -H "Authorization: Bearer $(echo -n '${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}' | base64)" \
             -H "Content-Type: application/json" \
-            https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${{ inputs.namespace }}?publishing_type=automatic
+            -o "$response_file" \
+            -w "%{http_code}" \
+            https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${{ inputs.namespace }}?publishing_type=automatic)
+          echo "HTTP response code: $response_code"
+          echo "Response body:"
+          cat "$response_file"
+          if [ "$response_code" -ne 200 ]; then
+            echo "❌ Upload failed with HTTP status code $response_code"
+            exit 1
+          else
+            echo "✅ Upload triggered successfully."
+          fi
+          rm -f "$response_file"
 
       - name: Update documentation
         uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1

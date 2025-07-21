@@ -3,6 +3,10 @@ name: Reusable - Build and Test
 on:
   workflow_call:
     inputs:
+      runner:
+        required: false
+        default: 'ubuntu-latest'
+        type: string
       java-version:
         required: false
         default: '17'
@@ -11,10 +15,18 @@ on:
         required: false
         default: 'temurin'
         type: string
+      working-directory:
+        required: false
+        default: '.'
+        type: string
 
 jobs:
   reusable-build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
 
     steps:
       - name: Checkout source code

@@ -3,6 +3,10 @@ name: Reusable - Publish Snapshot to Maven Central
 on:
   workflow_call:
     inputs:
+      runner:
+        required: false
+        default: 'ubuntu-latest'
+        type: string
       java-version:
         required: false
         default: '17'
@@ -21,7 +25,7 @@ on:
 
 jobs:
   reusable-publish-snapshot:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
 
     steps:
       - name: Checkout source code
@@ -43,6 +47,16 @@ jobs:
           PROJECT_VERSION=$(grep "^version" gradle.properties | cut -d'=' -f2 | tr -d ' ')
           echo "project-name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if this version is already released
+        run: |
+          PROJECT_VERSION=${{ steps.metadata.outputs.project-version }}
+          RELEASE_VERSION=${PROJECT_VERSION%-SNAPSHOT}
+          
+          if git tag -l | grep -q "^${RELEASE_VERSION}$"; then
+            echo "Error: Tag '$RELEASE_VERSION' already exists. Please update the version in gradle.properties."
+            exit 1
+          fi
 
       - name: Build and publish snapshot to Maven Central
         env:

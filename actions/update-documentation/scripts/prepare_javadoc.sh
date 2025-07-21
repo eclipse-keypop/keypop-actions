@@ -21,8 +21,12 @@ rm -rf *-SNAPSHOT
 echo "Create target directory $version..."
 mkdir $version
 
-echo "Copy javadoc files..."
+echo "Copy javadoc and uml files..."
 cp -rf ../build/docs/javadoc/* $version/
+cp -rf ../build/dokkaHtml/* $version/
+cp -rf ../plugin/build/dokka/html/* $version/
+cp -rf ../src/main/uml/api_*.svg $version/
+cp -rf ../docs/uml/api_*.svg $version/
 
 # Find the latest stable version (first non-SNAPSHOT)
 latest_stable=$(ls -d [0-9]*/ | grep -v SNAPSHOT | cut -f1 -d'/' | sort -Vr | head -n1)
@@ -45,11 +49,17 @@ sorted_dirs=$(ls -d [0-9]*/ | cut -f1 -d'/' | sort -Vr)
 # Loop through each sorted directory
 for directory in $sorted_dirs
 do
+  diagrams=""
+  for diagram in `ls $directory/api_*.svg | cut -f2 -d'/'`
+  do
+    name=`echo "$diagram" | tr _ " " | cut -f1 -d'.' | sed -r 's/^api/API/g'`
+    diagrams="$diagrams<br>[$name]($directory/$diagram)"
+  done
   # If this is the stable version, write latest-stable entry first
   if [ "$directory" = "$latest_stable" ]; then
-      echo "| **$directory (latest stable)** | [API documentation](latest-stable) |" >> list_versions.md
+      echo "| **$directory (latest stable)** | [API documentation](latest-stable)$diagrams |" >> list_versions.md
   else
-      echo "| $directory | [API documentation]($directory) |" >> list_versions.md
+      echo "| $directory | [API documentation]($directory)$diagrams |" >> list_versions.md
   fi
 
 done
