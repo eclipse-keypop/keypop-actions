@@ -89,7 +89,7 @@ jobs:
           ORG_GRADLE_PROJECT_releaseTag: ${{ github.event.release.tag_name }}
         run: |
           echo "Building and publishing release package..."
-          ./gradlew build publish --info --stacktrace
+          ./gradlew build publish
 
       - name: Trigger automatic upload to Maven Central
         run: |

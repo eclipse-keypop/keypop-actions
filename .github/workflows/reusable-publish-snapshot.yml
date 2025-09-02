@@ -65,7 +65,7 @@ jobs:
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
         run: |
           echo "Building and publishing snapshot package..."
-          ./gradlew build publish --info --stacktrace
+          ./gradlew build publish
 
       - name: Update documentation
         uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1

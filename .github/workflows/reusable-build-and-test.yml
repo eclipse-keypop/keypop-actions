@@ -44,4 +44,4 @@ jobs:
       - name: Build and test
         run: |
           echo "Building and testing project..."
-          ./gradlew build --info --stacktrace
+          ./gradlew build
