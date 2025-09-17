@@ -45,6 +45,11 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Verify dependency licenses
+        uses: eclipse-keypop/keypop-actions/actions/dash-licenses@dash-licenses-v1
+        with:
+          working-directory: ${{ inputs.working-directory }}
+
       - name: Extract project name and version
         id: metadata
         run: |
@@ -68,8 +73,10 @@ jobs:
 
       - name: Retrieve fingerprint of the signing subkey
         id: fingerprint
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
+          echo "$GPG_PRIVATE_KEY" > private.key
           gpg --batch --import private.key
           fingerprint=$(gpg --list-keys --with-subkey-fingerprint | awk '/^sub/ {getline; print $1}')
           echo "fingerprint=$fingerprint" >> $GITHUB_OUTPUT
@@ -92,11 +99,13 @@ jobs:
           ./gradlew build publish
 
       - name: Trigger automatic upload to Maven Central
+        env:
+          SONATYPE_AUTH_TOKEN: $(echo -n "${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}" | base64)
         run: |
           echo "Triggering upload to Maven Central..."
           response_file=$(mktemp)
           response_code=$(curl -v --connect-timeout 30 --max-time 300 -X POST \
-            -H "Authorization: Bearer $(echo -n '${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}' | base64)" \
+            -H "Authorization: Bearer $SONATYPE_AUTH_TOKEN" \
             -H "Content-Type: application/json" \
             -o "$response_file" \
             -w "%{http_code}" \

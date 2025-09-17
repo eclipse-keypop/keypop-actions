@@ -45,3 +45,8 @@ jobs:
         run: |
           echo "Building and testing project..."
           ./gradlew build
+
+      - name: Verify dependency licenses
+        uses: eclipse-keypop/keypop-actions/actions/dash-licenses@dash-licenses-v1
+        with:
+          working-directory: ${{ inputs.working-directory }}
