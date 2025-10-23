@@ -15,6 +15,14 @@ on:
         required: false
         default: 'temurin'
         type: string
+      update-documentation:
+        required: false
+        default: true
+        type: boolean
+      working-directory:
+        required: false
+        default: '.'
+        type: string
     secrets:
       CENTRAL_SONATYPE_TOKEN_USERNAME:
         required: true
@@ -73,6 +81,7 @@ jobs:
           ./gradlew build publish
 
       - name: Update documentation
+        if: ${{ inputs.update-documentation }}
         uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}

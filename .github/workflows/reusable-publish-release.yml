@@ -13,8 +13,20 @@ on:
       java-distribution:
         default: 'temurin'
         type: string
+      check-version:
+        required: false
+        default: true
+        type: boolean
+      update-documentation:
+        required: false
+        default: true
+        type: boolean
       namespace:
         default: 'org.eclipse.keypop'
+        type: string
+      working-directory:
+        required: false
+        default: '.'
         type: string
     secrets:
       CENTRAL_SONATYPE_TOKEN_USERNAME:
@@ -59,6 +71,7 @@ jobs:
           echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check version
+        if: ${{ inputs.check-version }}
         run: |
           EXPECTED_PROJECT_VERSION="${{ github.event.release.tag_name }}-SNAPSHOT"
           ACTUAL_PROJECT_VERSION="${{ steps.metadata.outputs.project-version }}"
@@ -99,13 +112,12 @@ jobs:
           ./gradlew build publish
 
       - name: Trigger automatic upload to Maven Central
-        env:
-          SONATYPE_AUTH_TOKEN: $(echo -n "${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}" | base64)
         run: |
           echo "Triggering upload to Maven Central..."
+          encoded_auth=$(echo -n "${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}" | base64)
           response_file=$(mktemp)
           response_code=$(curl -v --connect-timeout 30 --max-time 300 -X POST \
-            -H "Authorization: Bearer $SONATYPE_AUTH_TOKEN" \
+            -H "Authorization: Bearer $encoded_auth" \
             -H "Content-Type: application/json" \
             -o "$response_file" \
             -w "%{http_code}" \
@@ -122,6 +134,7 @@ jobs:
           rm -f "$response_file"
 
       - name: Update documentation
+        if: ${{ inputs.update-documentation }}
         uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
