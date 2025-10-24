@@ -15,8 +15,6 @@ on:
 
 jobs:
   reusable-doxygen:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
 
     steps:
