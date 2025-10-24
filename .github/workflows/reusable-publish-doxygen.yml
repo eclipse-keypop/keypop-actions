@@ -9,9 +9,12 @@ on:
         type: string
         default: ''
     secrets:
+      GITHUB_BOT_TOKEN:
+        description: 'GitHub token for deployment to doc branch'
+        required: true
       ORG_GITHUB_BOT_TOKEN:
         description: 'Organization GitHub token for triggering central documentation update (optional)'
-        required: true
+        required: false
 
 jobs:
   reusable-doxygen:
@@ -32,5 +35,5 @@ jobs:
         with:
           version: ${{ inputs.version }}
           repo-name: ${{ steps.repo.outputs.name }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_BOT_TOKEN }}
           org-github-token: ${{ secrets.ORG_GITHUB_BOT_TOKEN }}
