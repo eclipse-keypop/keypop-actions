@@ -11,12 +11,8 @@ inputs:
     description: 'Repository name'
     required: true
   github-token:
-    description: 'GitHub token for deployment'
+    description: 'GitHub token for deployment and triggering central documentation update'
     required: true
-  org-github-token:
-    description: 'Organization GitHub token for triggering central documentation update (optional)'
-    required: false
-    default: ''
 
 runs:
   using: "composite"
@@ -89,9 +85,8 @@ runs:
         git push origin doc --force
 
     - name: Trigger central documentation update
-      if: inputs.org-github-token != ''
       uses: peter-evans/repository-dispatch@v3
       with:
-        token: ${{ inputs.org-github-token }}
+        token: ${{ inputs.github-token }}
         repository: eclipse-keypop/keypop-api-docs
         event-type: update-submodules
