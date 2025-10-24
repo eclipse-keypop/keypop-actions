@@ -188,11 +188,11 @@ class DocumentationManager:
                 logger.info("Creating latest-stable symlink...")
                 latest_link = Path("latest-stable")
                 if latest_link.exists():
-                    if latest_link.is_dir():
-                        logger.info(f"Removing latest-stable directory: {latest_link}")
-                        shutil.rmtree(latest_link)
-                    else:
+                    logger.info(f"Removing latest-stable directory: {latest_link}")
+                    if latest_link.is_symlink() or latest_link.is_file():
                         latest_link.unlink()
+                    elif latest_link.is_dir():
+                        shutil.rmtree(latest_link)
                 latest_link.symlink_to(version_to_use)
 
                 logger.info("Writing robots.txt...")
