@@ -9,12 +9,9 @@ on:
         type: string
         default: ''
     secrets:
-      GITHUB_TOKEN:
-        description: 'GitHub token for deployment'
-        required: true
       ORG_GITHUB_BOT_TOKEN:
-        description: 'Organization GitHub token for triggering central documentation update'
-        required: true
+        description: 'Organization GitHub token for triggering central documentation update (optional)'
+        required: false
 
 jobs:
   reusable-doxygen:
