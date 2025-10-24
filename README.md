@@ -8,28 +8,41 @@ This repository contains all **GitHub Actions** and **reusable workflows** for t
 
 ## 🔁 Reusable Workflows
 
-These can be invoked in any org repo via `workflow_call`:
+These workflows can be invoked in any org repository via `workflow_call`.
 
-| Name                           | Description                                           | Path                                                           |
-|--------------------------------|-------------------------------------------------------|----------------------------------------------------------------|
-| Publish Snapshot               | Publish snapshot versions to Maven Central           | `.github/workflows/reusable-publish-snapshot.yml`             |
-| Publish Release                | Publish official releases to Maven Central           | `.github/workflows/reusable-publish-release.yml`              |
+| Name                           | Description                                                                  | Path                                                           |
+|--------------------------------|------------------------------------------------------------------------------|----------------------------------------------------------------|
+| Build and Test                 | Build and test Java/Gradle projects with license verification               | `.github/workflows/reusable-build-and-test.yml`               |
+| Publish Snapshot               | Publish snapshot versions to Maven Central                                   | `.github/workflows/reusable-publish-snapshot.yml`             |
+| Publish Release                | Publish official releases to Maven Central with GPG signing                  | `.github/workflows/reusable-publish-release.yml`              |
+| Publish Doxygen                | Generate and publish Doxygen documentation (C++) to `doc` branch             | `.github/workflows/reusable-publish-doxygen.yml`              |
+
+**Workflow Logic**:
+- **Build and Test**: Sets up Java environment, runs Gradle build, and verifies dependency license compliance.
+- **Publish Snapshot**: Validates version is not already released, builds the project, publishes to Maven Central Snapshots, and updates documentation.
+- **Publish Release**: Verifies version consistency, signs artifacts with GPG, publishes to Maven Central, triggers automatic upload, and updates documentation.
+- **Publish Doxygen**: Extracts repository metadata and invokes the `doxygen` action to generate and deploy documentation.
 
 ---
 
-## 🔧 Custom Composite Actions
+## 🔧 Internal Composite Actions
 
-These live under `actions/`.
+These actions live under `actions/` and encapsulate reusable complex workflows.
 
-| Name             | Description                      | Path                                  | Status        |
-|------------------|----------------------------------|---------------------------------------|---------------|
-| doxygen          | Run Doxygen to generate API docs | `actions/doxygen/action.yml`          | **Active**    |
+| Name                  | Description                                                                | Path                                        | Status        |
+|-----------------------|----------------------------------------------------------------------------|---------------------------------------------|---------------|
+| doxygen               | Generate and publish Doxygen documentation (C++ API)                       | `actions/doxygen/action.yml`                | **Active**    |
+| dash-licenses         | Verify dependency license compliance using Eclipse Dash                    | `actions/dash-licenses/action.yml`          | **Active**    |
+| update-documentation  | Generate and push Javadoc to `doc` branch                                  | `actions/update-documentation/action.yml`   | **Active**    |
+
+**Composite Action Logic**:
+- **doxygen**: Installs Python and dependencies, validates and patches Doxyfile, generates documentation via Doxygen, prepares versioned directory structure, deploys to `doc` branch, and triggers centralized documentation update.
+- **dash-licenses**: Sets up Java, generates Gradle lockfile (`gradle.lockfile`), downloads Eclipse Dash tool, verifies dependency licenses, and archives compliance report.
+- **update-documentation**: Prepares Javadoc via shell script, commits and pushes to `doc` branch, then triggers centralized documentation update.
 
 ---
 
 ## 📘 Usage Examples
-
-### 1. Calling a reusable workflow
 
 ```yaml
 name: Publish Snapshot
@@ -41,44 +54,22 @@ on:
 jobs:
   publish:
     uses: eclipse-keypop/keypop-actions/.github/workflows/reusable-publish-snapshot.yml@publish-snapshot-v1
-    with:
-      artifact: build/libs/mylib.jar
-````
-
-### 2. Using a composite action
-
-```yaml
-- name: Generate Doxygen Documentation
-  uses: eclipse-keypop/keypop-actions/actions/doxygen@doxygen-v1
+    secrets:
+      CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
+      CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
+      ORG_GITHUB_BOT_TOKEN: ${{ secrets.ORG_GITHUB_BOT_TOKEN }}
 ```
 
-### 3. (Deprecated) Old Doxygen action
-
-> ⚠️ **Deprecated** — will be removed in a future release
-
 ```yaml
-- name: Generate Doxygen Documentation
-  uses: eclipse-keypop/keypop-actions/doxygen@v2
+name: Build and Test
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    uses: eclipse-keypop/keypop-actions/.github/workflows/reusable-build-and-test.yml@build-and-test-v1
 ```
-
-## 📖 Versioning & Tags
-
-This repository contains multiple components. To manage them independently, all release tags follow this naming convention:
-
-**`<component-name>-<version>`**
-
-* **Full Version Tags** (e.g., `publish-release-v1.2.3`, `publish-snapshot-v1.0.0`, ...):
-  These represent a specific, immutable release of a component.
-
-* **Major Version Tags** (e.g., `publish-release-v1`, `publish-snapshot-v2`, ...):
-  These are floating tags that point to the latest non-breaking release within their major series. They are updated with each new compatible minor or patch release.
-
-* **Branches** (e.g., `main`):
-  Branch names are not considered stable versions. They represent ongoing development and their state can change at any time.
-
-## 🚀 Migrating from the old layout
-
-Replace `uses: eclipse-keypop/keypop-actions/doxygen@v2` by `uses: eclipse-keypop/keypop-actions/actions/doxygen@doxygen-v1`
 
 ---
 
