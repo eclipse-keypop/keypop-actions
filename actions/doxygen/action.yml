@@ -10,6 +10,13 @@ inputs:
   repo-name:
     description: 'Repository name'
     required: true
+  github-token:
+    description: 'GitHub token for deployment'
+    required: true
+  org-github-token:
+    description: 'Organization GitHub token for triggering central documentation update (optional)'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -65,3 +72,26 @@ runs:
           --github-org ${GITHUB_REPOSITORY_OWNER} \
           --repo-name "${{ inputs.repo-name }}" \
           --version "${{ inputs.version }}"
+
+    - name: Deploy to doc branch
+      shell: bash
+      working-directory: ${{ inputs.repo-name }}
+      run: |
+        git config user.name "Eclipse Keypop Bot"
+        git config user.email "${{ inputs.repo-name }}-bot@eclipse.org"
+        git remote set-url origin "https://x-access-token:${{ inputs.github-token }}@github.com/${GITHUB_REPOSITORY}.git"
+        git add .
+        if [ -n "${{ inputs.version }}" ]; then
+          git commit -m "docs: update ${{ inputs.version }} documentation"
+        else
+          git diff --quiet && git diff --staged --quiet || git commit -m "docs: update snapshot documentation"
+        fi
+        git push origin doc --force
+
+    - name: Trigger central documentation update
+      if: inputs.org-github-token != ''
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ inputs.org-github-token }}
+        repository: eclipse-keypop/keypop-api-docs
+        event-type: update-submodules

@@ -5,7 +5,8 @@ tags = [
     "publish-release-v1",
     "publish-snapshot-v1",
     "dash-licenses-v1",
-    "update-documentation-v1"
+    "update-documentation-v1",
+    "doxygen-v1"
 ]
 
 def run(cmd):
