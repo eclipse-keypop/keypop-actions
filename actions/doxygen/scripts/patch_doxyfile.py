@@ -24,6 +24,38 @@ class DoxyfileUpdater:
         """Validate version string format"""
         return bool(self.version_pattern.match(version))
 
+    def _parse_project_name(self, readme_file: Path) -> str:
+        """
+        Extract project name from README.md first line
+
+        Args:
+            readme_file: Path to README.md
+
+        Returns:
+            str: Project name extracted from first line
+
+        Raises:
+            FileNotFoundError: If README.md doesn't exist
+            ValueError: If project name cannot be extracted
+        """
+        if not readme_file.exists():
+            raise FileNotFoundError(f"README.md not found at {readme_file}")
+
+        try:
+            with readme_file.open('r', encoding='utf-8') as f:
+                first_line = f.readline().strip()
+        except IOError as e:
+            raise IOError(f"Failed to read README.md: {e}")
+
+        # Remove # characters and strip whitespace
+        project_name = first_line.replace('#', '').strip()
+
+        if not project_name:
+            raise ValueError("Could not extract project name from README.md first line")
+
+        logger.info(f"Extracted project name: {project_name}")
+        return project_name
+
     def _parse_cmake_version(self, cmake_file: Path) -> str:
         """
         Extract version from CMakeLists.txt
@@ -65,7 +97,7 @@ class DoxyfileUpdater:
 
     def update_doxyfile(self, doxyfile_path: Path, version: Optional[str] = None) -> None:
         """
-        Update Doxyfile with current version
+        Update Doxyfile with current version and project name
 
         Args:
             doxyfile_path: Path to the Doxyfile
@@ -86,21 +118,26 @@ class DoxyfileUpdater:
 
         logger.info(f"Using API version: {version}")
 
+        # Extract project name from README.md
+        logger.info("Extracting project name from README.md...")
+        project_name = self._parse_project_name(Path("README.md"))
+
         if not doxyfile_path.exists():
             raise FileNotFoundError(f"Doxyfile not found at {doxyfile_path}")
 
         try:
             content = doxyfile_path.read_text()
             updated_content = content.replace("%PROJECT_VERSION%", version)
+            updated_content = updated_content.replace("%PROJECT_NAME%", project_name)
             doxyfile_path.write_text(updated_content)
-            logger.info(f"Updated {doxyfile_path} with version {version}")
+            logger.info(f"Updated {doxyfile_path} with version {version} and project name {project_name}")
         except IOError as e:
             raise IOError(f"Failed to update Doxyfile: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update Doxyfile version")
+    parser = argparse.ArgumentParser(description="Update Doxyfile version and project name from README.md")
     parser.add_argument("doxyfile_path", type=Path, help="Path to the Doxyfile")
-    parser.add_argument("version", nargs="?", help="Version to set (optional)")
+    parser.add_argument("version", nargs="?", help="Version to set (optional, will use CMakeLists.txt if not provided)")
     args = parser.parse_args()
 
     try:

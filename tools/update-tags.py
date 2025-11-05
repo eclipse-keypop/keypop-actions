@@ -15,7 +15,12 @@ def run(cmd):
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"Error: {result.stderr.strip()}")
-        raise Exception(f"Command failed: {' '.join(cmd)}")
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            cmd,
+            output=result.stdout,
+            stderr=result.stderr
+        )
     return result.stdout.strip()
 
 def tag_exists(tag):
