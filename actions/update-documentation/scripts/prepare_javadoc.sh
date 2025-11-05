@@ -50,9 +50,9 @@ sorted_dirs=$(ls -d [0-9]*/ | cut -f1 -d'/' | sort -Vr)
 for directory in $sorted_dirs
 do
   diagrams=""
-  for diagram in `ls $directory/api_*.svg | cut -f2 -d'/'`
+  for diagram in $(ls $directory/api_*.svg | cut -f2 -d'/')
   do
-    name=`echo "$diagram" | tr _ " " | cut -f1 -d'.' | sed -r 's/^api/API/g'`
+    name=$(echo "$diagram" | tr _ " " | cut -f1 -d'.' | sed -r 's/^api/API/g')
     diagrams="$diagrams<br>[$name]($directory/$diagram)"
   done
   # If this is the stable version, write latest-stable entry first

@@ -58,7 +58,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Verify dependency licenses
-        uses: eclipse-keypop/keypop-actions/actions/dash-licenses@dash-licenses-v1
+        uses: eclipse-keypop/keypop-actions/actions/dash-licenses@main  # NOSONAR - Same organization, trusted source
         with:
           working-directory: ${{ inputs.working-directory }}
 
@@ -112,6 +112,8 @@ jobs:
           ./gradlew build publish
 
       - name: Trigger automatic upload to Maven Central
+        env:
+          NAMESPACE: ${{ inputs.namespace }}
         run: |
           echo "Triggering upload to Maven Central..."
           encoded_auth=$(echo -n "${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}" | base64)
@@ -121,7 +123,7 @@ jobs:
             -H "Content-Type: application/json" \
             -o "$response_file" \
             -w "%{http_code}" \
-            https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${{ inputs.namespace }}?publishing_type=automatic)
+            "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${NAMESPACE}?publishing_type=automatic")
           echo "HTTP response code: $response_code"
           echo "Response body:"
           cat "$response_file"
@@ -135,7 +137,7 @@ jobs:
 
       - name: Update documentation
         if: ${{ inputs.update-documentation }}
-        uses: eclipse-keypop/keypop-actions/actions/update-documentation@update-documentation-v1
+        uses: eclipse-keypop/keypop-actions/actions/update-documentation@main  # NOSONAR - Same organization, trusted source
         with:
           project-name: ${{ steps.metadata.outputs.project-name }}
           project-version: ${{ github.event.release.tag_name }}

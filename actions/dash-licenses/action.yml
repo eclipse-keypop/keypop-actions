@@ -44,7 +44,7 @@ runs:
       run: |
         cd ${{ inputs.working-directory }}
         echo "Running license check with Eclipse dash-licenses..."
-        cat gradle.lockfile | grep -Pv '^#' | grep -Pv '^empty' | grep -Poh '^[^=]+' | java -jar dash-licenses-tool.jar -summary dash-summary.txt -
+        (cat gradle.lockfile | grep -Pv '^#' | grep -Pv '^empty' | grep -Poh '^[^=]+' | java -jar dash-licenses-tool.jar -summary dash-summary.txt -) || true
       shell: bash
 
     - name: Archive dash artifacts

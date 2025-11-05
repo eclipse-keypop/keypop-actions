@@ -61,14 +61,8 @@ def generate_lockfile(project_dir: Path):
     logging.info("Generating gradle.lockfile...")
     run_cmd(get_gradle_cmd(project_dir) + ["dependencies", "--write-locks", "--init-script", str(init_script)], cwd=project_dir)
 
-def run_dash_tool(project_dir: Path, review=False, token=None, repo=None, project=None):
-    summary_file = project_dir / "dash-summary.txt"
-    gradle_lockfile = project_dir / "gradle.lockfile"
-    dash_jar = SCRIPT_DIR / DASH_JAR_NAME
-
-    if not gradle_lockfile.exists():
-        raise FileNotFoundError("gradle.lockfile not found. Did you run generate_lockfile()?")
-
+def read_dependencies_from_lockfile(gradle_lockfile: Path):
+    """Extract dependencies from gradle.lockfile."""
     logging.info("Extracting dependencies from gradle.lockfile...")
     dependencies = []
     with open(gradle_lockfile, "r", encoding="utf-8") as infile:
@@ -77,10 +71,13 @@ def run_dash_tool(project_dir: Path, review=False, token=None, repo=None, projec
             if not line or line.startswith("#") or line.startswith("empty"):
                 continue
             dependencies.append(line.split("=", 1)[0])
+
     if not dependencies:
         logging.warning("No dependencies found in gradle.lockfile!")
-        return
+    return dependencies
 
+def build_dash_command(dash_jar: Path, summary_file: Path, review: bool, token: str, repo: str, project: str):
+    """Build the dash-licenses command."""
     cmd = ["java", "-jar", str(dash_jar), "-summary", str(summary_file), "-"]
     if review:
         if not token or not project:
@@ -88,15 +85,10 @@ def run_dash_tool(project_dir: Path, review=False, token=None, repo=None, projec
         cmd += ["-review", "-token", token, "-project", project]
         if repo:
             cmd += ["-repo", repo]
+    return cmd
 
-    logging.info(f"Running dash-licenses{' with review request' if review else ''}...")
-    proc = subprocess.run(
-        cmd,
-        input="\n".join(dependencies).encode("utf-8"),
-        cwd=project_dir,
-        capture_output=True
-    )
-
+def handle_dash_result(proc):
+    """Handle the result from dash-licenses tool."""
     stdout_text = proc.stdout.decode()
     stderr_text = proc.stderr.decode()
 
@@ -112,6 +104,30 @@ def run_dash_tool(project_dir: Path, review=False, token=None, repo=None, projec
         logging.error(stdout_text)
         logging.error(stderr_text)
         raise subprocess.CalledProcessError(proc.returncode, proc.args, proc.stdout, proc.stderr)
+
+def run_dash_tool(project_dir: Path, review=False, token=None, repo=None, project=None):
+    summary_file = project_dir / "dash-summary.txt"
+    gradle_lockfile = project_dir / "gradle.lockfile"
+    dash_jar = SCRIPT_DIR / DASH_JAR_NAME
+
+    if not gradle_lockfile.exists():
+        raise FileNotFoundError("gradle.lockfile not found. Did you run generate_lockfile()?")
+
+    dependencies = read_dependencies_from_lockfile(gradle_lockfile)
+    if not dependencies:
+        return
+
+    cmd = build_dash_command(dash_jar, summary_file, review, token, repo, project)
+    logging.info(f"Running dash-licenses{' with review request' if review else ''}...")
+
+    proc = subprocess.run(
+        cmd,
+        input="\n".join(dependencies).encode("utf-8"),
+        cwd=project_dir,
+        capture_output=True
+    )
+
+    handle_dash_result(proc)
 
 def clean_up(project_dir: Path):
     init_script = project_dir / "init.gradle.kts"
