@@ -56,6 +56,27 @@ class DoxyfileUpdater:
         logger.info(f"Extracted project name: {project_name}")
         return project_name
 
+    @staticmethod
+    def _has_mainpage(include_dir: Path) -> bool:
+        """Check whether a \\mainpage (or @mainpage) block is already defined in the headers"""
+        if not include_dir.is_dir():
+            return False
+        mainpage_pattern = re.compile(r'[@\\]mainpage\b')
+        for path in include_dir.rglob("*"):
+            if path.suffix in (".dox", ".h", ".hpp") and path.is_file():
+                if mainpage_pattern.search(path.read_text(encoding="utf-8", errors="ignore")):
+                    return True
+        return False
+
+    @staticmethod
+    def _set_option(content: str, key: str, value: str) -> str:
+        """Set the value of a single-line Doxyfile option"""
+        pattern = re.compile(r'^(%s\s*=)[^\r\n]*' % re.escape(key), re.MULTILINE)
+        updated_content, count = pattern.subn(lambda m: f"{m.group(1)} {value}", content, count=1)
+        if count != 1:
+            raise ValueError(f"Option {key} not found in Doxyfile")
+        return updated_content
+
     def _parse_cmake_version(self, cmake_file: Path) -> str:
         """
         Extract version from CMakeLists.txt
@@ -78,10 +99,19 @@ class DoxyfileUpdater:
         project_version_pattern = r'PROJECT\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+)[^)]*\)'
         version_match = re.search(project_version_pattern, content, re.MULTILINE | re.IGNORECASE)
 
-        if not version_match:
-            raise VersionError("Could not extract PROJECT VERSION")
-
-        version = version_match.group(1)
+        if version_match:
+            version = version_match.group(1)
+        else:
+            # Fallback: SET(CMAKE_PROJECT_VERSION_MAJOR/MINOR/PATCH "x") declarations
+            parts = []
+            for part in ("MAJOR", "MINOR", "PATCH"):
+                part_match = re.search(
+                    r'SET\s*\(\s*CMAKE_PROJECT_VERSION_%s\s+"?(\d+)"?\s*\)' % part,
+                    content, re.IGNORECASE)
+                if not part_match:
+                    raise VersionError("Could not extract PROJECT VERSION")
+                parts.append(part_match.group(1))
+            version = ".".join(parts)
 
         # Check for C++ fix version
         cpp_fix_pattern = r'SET\s*\(VERSION_CPPFIX\s*"(\d+)"\s*\)'
@@ -129,6 +159,14 @@ class DoxyfileUpdater:
             content = doxyfile_path.read_text()
             updated_content = content.replace("%PROJECT_VERSION%", version)
             updated_content = updated_content.replace("%PROJECT_NAME%", project_name)
+            if self._has_mainpage(Path("include")):
+                logger.info("Main page defined in headers, README.md not used as main page")
+            else:
+                logger.info("No main page defined in headers, using README.md as main page")
+                updated_content = self._set_option(
+                    updated_content, "INPUT", "../../include ../../README.md")
+                updated_content = self._set_option(
+                    updated_content, "USE_MDFILE_AS_MAINPAGE", "../../README.md")
             doxyfile_path.write_text(updated_content)
             logger.info(f"Updated {doxyfile_path} with version {version} and project name {project_name}")
         except IOError as e:
