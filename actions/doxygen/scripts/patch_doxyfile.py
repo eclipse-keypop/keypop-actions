@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from cmake_version import parse_cmake_version
+from cmake_version import parse_cmake_version, strip_cmake_comments
 
 logging.basicConfig(
     level=logging.INFO,
@@ -94,7 +94,7 @@ class DoxyfileUpdater:
             VersionError: If version cannot be extracted
         """
         version = parse_cmake_version(cmake_file)
-        content = cmake_file.read_text()
+        content = strip_cmake_comments(cmake_file.read_text())
 
         # Check for C++ fix version
         cpp_fix_pattern = r'SET\s*\(VERSION_CPPFIX\s*"(\d+)"\s*\)'
