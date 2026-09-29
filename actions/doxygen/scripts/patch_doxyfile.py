@@ -6,6 +6,8 @@ import logging
 from pathlib import Path
 from typing import Optional
 
+from cmake_version import parse_cmake_version
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -63,7 +65,7 @@ class DoxyfileUpdater:
             return False
         mainpage_pattern = re.compile(r'[@\\]mainpage\b')
         for path in include_dir.rglob("*"):
-            if path.suffix in (".dox", ".h", ".hpp") and path.is_file():
+            if path.suffix in (".dox", ".h", ".hh", ".hxx", ".hpp", ".h++") and path.is_file():
                 if mainpage_pattern.search(path.read_text(encoding="utf-8", errors="ignore")):
                     return True
         return False
@@ -91,34 +93,15 @@ class DoxyfileUpdater:
             FileNotFoundError: If CMakeLists.txt doesn't exist
             VersionError: If version cannot be extracted
         """
-        if not cmake_file.exists():
-            raise FileNotFoundError(f"CMakeLists.txt not found at {cmake_file}")
-
+        version = parse_cmake_version(cmake_file)
         content = cmake_file.read_text()
-
-        project_version_pattern = r'PROJECT\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+)[^)]*\)'
-        version_match = re.search(project_version_pattern, content, re.MULTILINE | re.IGNORECASE)
-
-        if version_match:
-            version = version_match.group(1)
-        else:
-            # Fallback: SET(CMAKE_PROJECT_VERSION_MAJOR/MINOR/PATCH "x") declarations
-            parts = []
-            for part in ("MAJOR", "MINOR", "PATCH"):
-                part_match = re.search(
-                    r'SET\s*\(\s*CMAKE_PROJECT_VERSION_%s\s+"?(\d+)"?\s*\)' % part,
-                    content, re.IGNORECASE)
-                if not part_match:
-                    raise VersionError("Could not extract PROJECT VERSION")
-                parts.append(part_match.group(1))
-            version = ".".join(parts)
 
         # Check for C++ fix version
         cpp_fix_pattern = r'SET\s*\(VERSION_CPPFIX\s*"(\d+)"\s*\)'
         cpp_fix_match = re.search(cpp_fix_pattern, content)
 
         if cpp_fix_match:
-            version = f"{version}.{cpp_fix_match.group(1)}"
+            version = f"{'.'.join(version.split('.')[:3])}.{cpp_fix_match.group(1)}"
 
         if not self.version_pattern.match(version):
             raise VersionError(f"Invalid version format: {version}")
