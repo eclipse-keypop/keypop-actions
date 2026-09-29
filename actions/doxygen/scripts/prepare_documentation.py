@@ -10,6 +10,8 @@ import fcntl
 from pathlib import Path
 from packaging.version import parse
 
+from cmake_version import parse_cmake_version
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -38,16 +40,7 @@ class DocumentationManager:
 
     def _parse_cmake_version(self, cmake_file: Path) -> str:
         """Extract version from CMakeLists.txt"""
-        if not cmake_file.exists():
-            raise FileNotFoundError(f"CMakeLists.txt not found at {cmake_file}")
-
-        content = cmake_file.read_text()
-        version_match = re.search(r'PROJECT\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+(?:\.\d+)?)[^)]*\)',
-                                  content, re.MULTILINE | re.IGNORECASE)
-
-        if not version_match:
-            raise ValueError("Could not extract PROJECT VERSION")
-        return version_match.group(1)
+        return parse_cmake_version(cmake_file)
 
     def _get_version_key(self, version_str: str) -> tuple:
         """
