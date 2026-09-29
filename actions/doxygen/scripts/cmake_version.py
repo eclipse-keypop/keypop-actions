@@ -19,7 +19,7 @@ def parse_cmake_version(cmake_file: Path) -> str:
     Extract the project version from CMakeLists.txt
 
     The version is read from the PROJECT(... VERSION x.y.z[.t] ...) command or, as a fallback,
-    from the SET(CMAKE_PROJECT_VERSION_MAJOR/MINOR/PATCH "x") declarations.
+    from the SET(CMAKE_PROJECT_VERSION_MAJOR/MINOR/PATCH[/TWEAK] "x") declarations.
 
     Args:
         cmake_file: Path to CMakeLists.txt
@@ -41,10 +41,11 @@ def parse_cmake_version(cmake_file: Path) -> str:
         return version_match.group(1)
 
     parts = []
-    for part in ("MAJOR", "MINOR", "PATCH"):
+    for part in ("MAJOR", "MINOR", "PATCH", "TWEAK"):
         part_match = re.search(
             r'SET\s*\(\s*CMAKE_PROJECT_VERSION_%s\s+"?(\d+)"?\s*\)' % part, content, re.IGNORECASE)
-        if not part_match:
+        if part_match:
+            parts.append(part_match.group(1))
+        elif part != "TWEAK":
             raise CMakeVersionError("Could not extract PROJECT VERSION")
-        parts.append(part_match.group(1))
     return ".".join(parts)
