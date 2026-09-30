@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Optional, Tuple
 from packaging.version import parse, Version
 
+from cmake_version import CMakeVersionError, parse_cmake_version
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -58,19 +60,7 @@ class VersionChecker:
             FileNotFoundError: If CMakeLists.txt doesn't exist
             VersionError: If version cannot be extracted
         """
-        if not cmake_file.exists():
-            raise FileNotFoundError(f"CMakeLists.txt not found at {cmake_file}")
-
-        content = cmake_file.read_text()
-
-        # Updated pattern to capture optional fourth number
-        project_version_pattern = r'PROJECT\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+(?:\.\d+)?)[^)]*\)'
-        version_match = re.search(project_version_pattern, content, re.MULTILINE | re.IGNORECASE)
-
-        if not version_match:
-            raise VersionError("Could not extract PROJECT VERSION")
-
-        version = version_match.group(1)
+        version = parse_cmake_version(cmake_file)
         if not self.version_pattern.match(version):
             raise VersionError(f"Invalid version format in CMakeLists.txt: {version}")
 
@@ -139,7 +129,7 @@ class VersionChecker:
                         raise VersionError(f"Java reference version '{cmake_java_version}' or its C++ fixes already released")
                 logger.info(f"Version '{cmake_version}' not yet released")
 
-        except (subprocess.CalledProcessError, FileNotFoundError, VersionError) as e:
+        except (subprocess.CalledProcessError, FileNotFoundError, VersionError, CMakeVersionError) as e:
             logger.error(str(e))
             raise SystemExit(1)
         except Exception as e:
