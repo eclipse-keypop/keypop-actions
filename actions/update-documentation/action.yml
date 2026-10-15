@@ -31,21 +31,27 @@ runs:
 
     - name: Run prepare_javadoc.sh
       shell: bash
+      env:
+        PROJECT_NAME: ${{ inputs.project-name }}
+        PROJECT_VERSION: ${{ inputs.project-version }}
       run: |
-        ${{ github.action_path }}/scripts/prepare_javadoc.sh \
-          "${{ inputs.project-name }}" \
-          "${{ inputs.project-version }}"
+        "${{ github.action_path }}/scripts/prepare_javadoc.sh" \
+          "$PROJECT_NAME" \
+          "$PROJECT_VERSION"
 
     - name: Commit and push Javadoc to doc branch
       shell: bash
       working-directory: ${{ inputs.project-name }}
+      env:
+        PROJECT_NAME: ${{ inputs.project-name }}
+        GITHUB_BOT_TOKEN: ${{ inputs.github-bot-token }}
       run: |
         git add -A
-        git config user.email "${{ inputs.project-name }}-bot@eclipse.org"
-        git config user.name "${{ inputs.project-name }}-bot"
+        git config user.email "${PROJECT_NAME}-bot@eclipse.org"
+        git config user.name "${PROJECT_NAME}-bot"
         git commit --allow-empty -m "docs: update documentation $GITHUB_WORKFLOW-$GITHUB_RUN_NUMBER"
         git log --graph --abbrev-commit --date=relative -n 5
-        git push "https://${{ inputs.github-bot-token }}@github.com/eclipse-keypop/${{ inputs.project-name }}.git" HEAD:doc
+        git push "https://${GITHUB_BOT_TOKEN}@github.com/eclipse-keypop/${PROJECT_NAME}.git" HEAD:doc
 
     - name: Trigger central documentation update
       uses: peter-evans/repository-dispatch@v3

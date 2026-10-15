@@ -8,9 +8,9 @@ version=$2
 echo "Computed current API version: $version"
 
 echo "Clone $repository_name..."
-git clone https://github.com/eclipse-keypop/$repository_name.git
+git clone "https://github.com/eclipse-keypop/${repository_name}.git"
 
-cd $repository_name
+cd "$repository_name" || exit 1
 
 echo "Checkout doc branch..."
 git checkout -f doc
@@ -19,14 +19,14 @@ echo "Delete existing SNAPSHOT directory..."
 rm -rf *-SNAPSHOT
 
 echo "Create target directory $version..."
-mkdir $version
+mkdir "$version"
 
 echo "Copy javadoc and uml files..."
-cp -rf ../build/docs/javadoc/* $version/
-cp -rf ../build/dokkaHtml/* $version/
-cp -rf ../plugin/build/dokka/html/* $version/
-cp -rf ../src/main/uml/api_*.svg $version/
-cp -rf ../docs/uml/api_*.svg $version/
+cp -rf ../build/docs/javadoc/* "$version"/
+cp -rf ../build/dokkaHtml/* "$version"/
+cp -rf ../plugin/build/dokka/html/* "$version"/
+cp -rf ../src/main/uml/api_*.svg "$version"/
+cp -rf ../docs/uml/api_*.svg "$version"/
 
 # Find the latest stable version (first non-SNAPSHOT)
 latest_stable=$(ls -d [0-9]*/ | grep -v SNAPSHOT | cut -f1 -d'/' | sort -Vr | head -n1)
