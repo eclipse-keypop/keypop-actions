@@ -72,9 +72,12 @@ jobs:
 
       - name: Check version
         if: ${{ inputs.check-version }}
+        env:
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+          PROJECT_VERSION: ${{ steps.metadata.outputs.project-version }}
         run: |
-          EXPECTED_PROJECT_VERSION="${{ github.event.release.tag_name }}-SNAPSHOT"
-          ACTUAL_PROJECT_VERSION="${{ steps.metadata.outputs.project-version }}"
+          EXPECTED_PROJECT_VERSION="${RELEASE_TAG_NAME}-SNAPSHOT"
+          ACTUAL_PROJECT_VERSION="${PROJECT_VERSION}"
 
           echo "Expected project version: $EXPECTED_PROJECT_VERSION"
           echo "Actual project version from gradle.properties: $ACTUAL_PROJECT_VERSION"
@@ -91,6 +94,7 @@ jobs:
         run: |
           echo "$GPG_PRIVATE_KEY" > private.key
           gpg --batch --import private.key
+          rm -f private.key
           fingerprint=$(gpg --list-keys --with-subkey-fingerprint | awk '/^sub/ {getline; print $1}')
           echo "fingerprint=$fingerprint" >> $GITHUB_OUTPUT
 

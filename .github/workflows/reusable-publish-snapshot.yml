@@ -64,8 +64,9 @@ jobs:
           echo "project-version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if this version is already released
+        env:
+          PROJECT_VERSION: ${{ steps.metadata.outputs.project-version }}
         run: |
-          PROJECT_VERSION=${{ steps.metadata.outputs.project-version }}
           RELEASE_VERSION=${PROJECT_VERSION%-SNAPSHOT}
           
           if git tag -l | grep -q "^${RELEASE_VERSION}$"; then
