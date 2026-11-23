@@ -1,0 +1,63 @@
+name: Reusable C++ Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      extra_linux_deps:
+        description: 'Extra dependencies to install on Linux'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        env:
+          - runner: ubuntu-latest
+          - runner: macos-latest
+          - runner: windows-latest
+
+    runs-on: ${{ matrix.env.runner }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Conan
+        shell: bash
+        run: |
+          pip install "conan>=2,<3"
+          conan profile detect
+
+      - name: Add Keyple/Keypop Conan recipes
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/eclipse-keypop/keypop-cpp-conan-recipes.git "$RUNNER_TEMP/keypop-cpp-conan-recipes"
+          conan remote add keypop "$RUNNER_TEMP/keypop-cpp-conan-recipes" --type=local-recipes-index
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2/p
+          key: conan-${{ matrix.env.runner }}-${{ hashFiles('conanfile.py') }}
+
+      - name: Install Linux reqs
+        if: ${{ matrix.env.runner == 'ubuntu-latest' }}
+        shell: bash
+        env:
+          EXTRA_DEPS: ${{ inputs.extra_linux_deps }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck clang-format clang-tidy pre-commit $EXTRA_DEPS
+
+      - name: Install macOS reqs
+        if: ${{ matrix.env.runner == 'macos-latest' }}
+        shell: bash
+        run: |
+          brew install cppcheck clang-format pre-commit
+
+      - name: Build
+        shell: bash
+        run: |
+          conan build . -o with_tests=True --build=missing
