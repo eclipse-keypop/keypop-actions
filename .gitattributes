@@ -1,0 +1,9 @@
+# Shell scripts are run by the Linux runners of GitHub Actions, so they must be checked out with
+# LF endings whatever the platform of the contributor: a CR would reach the shell as part of a
+# word -- "do\r" is not "do" -- and the script would fail in CI only, never locally.
+*.sh text eol=lf
+
+# Normalise the other text files, and leave anything else to the detection of git.
+*.yml text
+*.yaml text
+*.md text
