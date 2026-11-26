@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 echo "Compute the current API version..."
 
@@ -24,9 +24,11 @@ mkdir "$version"
 echo "Copy javadoc and uml files..."
 cp -rf ../build/docs/javadoc/* "$version"/
 cp -rf ../build/dokkaHtml/* "$version"/
+cp -rf ../build/dokka/html/* "$version"/
 cp -rf ../plugin/build/dokka/html/* "$version"/
 cp -rf ../src/main/uml/api_*.svg "$version"/
 cp -rf ../docs/uml/api_*.svg "$version"/
+cp -rf ../docs/uml/class-diagram.svg "$version"/
 
 # Find the latest stable version (first non-SNAPSHOT)
 latest_stable=$(ls -d [0-9]*/ | grep -v SNAPSHOT | cut -f1 -d'/' | sort -Vr | head -n1)
@@ -46,20 +48,17 @@ echo "|:---:|---|" >> list_versions.md
 # Get the list of directories sorted by version number
 sorted_dirs=$(ls -d [0-9]*/ | cut -f1 -d'/' | sort -Vr)
 
-# Loop through each sorted directory
+# Loop through each sorted directory.
+# Class diagrams are deliberately NOT linked from this page: they are published
+# next to the documentation but reached only from its home page, so that each
+# diagram is read in the context of the API it illustrates.
 for directory in $sorted_dirs
 do
-  diagrams=""
-  for diagram in $(ls $directory/api_*.svg | cut -f2 -d'/')
-  do
-    name=$(echo "$diagram" | tr _ " " | cut -f1 -d'.' | sed -r 's/^api/API/g')
-    diagrams="$diagrams<br>[$name]($directory/$diagram)"
-  done
   # If this is the stable version, write latest-stable entry first
   if [ "$directory" = "$latest_stable" ]; then
-      echo "| **$directory (latest stable)** | [API documentation](latest-stable)$diagrams |" >> list_versions.md
+      echo "| **$directory (latest stable)** | [API documentation](latest-stable) |" >> list_versions.md
   else
-      echo "| $directory | [API documentation]($directory)$diagrams |" >> list_versions.md
+      echo "| $directory | [API documentation]($directory) |" >> list_versions.md
   fi
 
 done

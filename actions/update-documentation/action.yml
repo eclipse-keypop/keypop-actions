@@ -25,17 +25,17 @@ runs:
         echo "Action path: ${{ github.action_path }}"
         echo "::endgroup::"
 
-    - name: Make prepare_javadoc.sh executable
+    - name: Make prepare_documentation.sh executable
       shell: bash
-      run: chmod +x ${{ github.action_path }}/scripts/prepare_javadoc.sh
+      run: chmod +x ${{ github.action_path }}/scripts/prepare_documentation.sh
 
-    - name: Run prepare_javadoc.sh
+    - name: Run prepare_documentation.sh
       shell: bash
       env:
         PROJECT_NAME: ${{ inputs.project-name }}
         PROJECT_VERSION: ${{ inputs.project-version }}
       run: |
-        "${{ github.action_path }}/scripts/prepare_javadoc.sh" \
+        "${{ github.action_path }}/scripts/prepare_documentation.sh" \
           "$PROJECT_NAME" \
           "$PROJECT_VERSION"
 
