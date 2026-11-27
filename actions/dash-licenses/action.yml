@@ -16,7 +16,7 @@ runs:
   using: "composite"
   steps:
     - name: Set up JDK ${{ inputs.java-version }}
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         java-version: ${{ inputs.java-version }}
         distribution: ${{ inputs.java-distribution }}
@@ -37,22 +37,56 @@ runs:
     - name: Download Eclipse dash-licenses tool
       run: |
         cd ${{ inputs.working-directory }}
-        wget -O dash-licenses-tool.jar 'https://repo.eclipse.org/service/rest/v1/search/assets/download?repository=dash-maven2-releases&maven.groupId=org.eclipse.dash&maven.artifactId=org.eclipse.dash.licenses&maven.baseVersion=1.1.0&maven.extension=jar'
+        # repo.eclipse.org answers 503 often enough to fail unrelated pull requests. Retry
+        # rather than let a hiccup of the Eclipse Nexus break a build that has nothing to do
+        # with it.
+        wget --tries=5 --waitretry=10 --retry-connrefused --retry-on-http-error=429,500,502,503,504 -O dash-licenses-tool.jar 'https://repo.eclipse.org/service/rest/v1/search/assets/download?repository=dash-maven2-releases&maven.groupId=org.eclipse.dash&maven.artifactId=org.eclipse.dash.licenses&maven.baseVersion=1.1.0&maven.extension=jar'
       shell: bash
 
     - name: Run Eclipse dash-licenses check
+      id: license-check
       run: |
         cd ${{ inputs.working-directory }}
+        if [ ! -f gradle.lockfile ]; then
+          echo "::error::gradle.lockfile was not generated: the license check cannot run."
+          exit 1
+        fi
         echo "Running license check with Eclipse dash-licenses..."
-        (cat gradle.lockfile | grep -Pv '^#' | grep -Pv '^empty' | grep -Poh '^[^=]+' | java -jar dash-licenses-tool.jar -summary dash-summary.txt -) || true
+        # dash-licenses exits non-zero when it finds restricted content. That is a result to
+        # be read in the summary, not a reason to fail the build, hence the `|| true`. A
+        # missing summary is another matter: it means the check never ran, and must be loud,
+        # otherwise a broken pipeline is indistinguishable from a clean dependency tree.
+        set +e
+        deps=$(grep -Pv '^#' gradle.lockfile | grep -Pv '^empty' | grep -Poh '^[^=]+')
+        extraction=$?
+        set -e
+        # grep answers 1 when it matches nothing, which is legitimate, and 2 or more on a
+        # real failure, which must not be mistaken for a project without dependencies.
+        if [ "$extraction" -gt 1 ]; then
+          echo "::error::could not read the dependencies of gradle.lockfile (grep exited $extraction)."
+          exit 1
+        fi
+        if [ -z "$deps" ]; then
+          echo "No dependency to check; writing an empty summary."
+          : > dash-summary.txt
+        else
+          echo "$deps" | java -jar dash-licenses-tool.jar -summary dash-summary.txt - || true
+          if [ ! -f dash-summary.txt ]; then
+            echo "::error::dash-licenses produced no summary: the license check did not run."
+            exit 1
+          fi
+        fi
       shell: bash
 
+    # Uploaded only when the check actually produced a summary, so that `if-no-files-found`
+    # states a real invariant instead of degrading a broken check into a yellow warning.
     - name: Archive dash artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
+      if: always() && steps.license-check.outcome == 'success'
+      uses: actions/upload-artifact@v7
       with:
         name: Dash Report - ${{ inputs.working-directory }} - Run ${{ github.run_number }}
         path: ${{ inputs.working-directory }}/dash-summary.txt
+        if-no-files-found: error
 
     - name: Clean up init script and tool
       if: always()
