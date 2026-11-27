@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Conan
         shell: bash
@@ -37,7 +37,7 @@ jobs:
           conan remote add keypop "$RUNNER_TEMP/keypop-cpp-conan-recipes" --type=local-recipes-index
 
       - name: Cache Conan packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.conan2/p
           key: conan-${{ matrix.env.runner }}-${{ hashFiles('conanfile.py') }}
