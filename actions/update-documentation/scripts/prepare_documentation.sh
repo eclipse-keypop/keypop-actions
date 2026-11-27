@@ -42,26 +42,40 @@ if [ ! -z "$latest_stable" ]; then
 fi
 
 echo "Update versions list..."
-echo "| Version | Documents |" > list_versions.md
-echo "|:---:|---|" >> list_versions.md
+echo "| Version |" > list_versions.md
+echo "|:---|" >> list_versions.md
 
 # Get the list of directories sorted by version number
 sorted_dirs=$(ls -d [0-9]*/ | cut -f1 -d'/' | sort -Vr)
 
-# Loop through each sorted directory.
-# Class diagrams are deliberately NOT linked from this page: they are published
-# next to the documentation but reached only from its home page, so that each
-# diagram is read in the context of the API it illustrates.
+# One column, and the version number is itself the link. There is exactly one document per
+# version, so a second column would carry the same label on every row -- which also made every
+# link of the page announce the same thing to a screen reader.
+#
+# Class diagrams are deliberately NOT linked from this page: they are published next to the
+# documentation but reached only from its home page, so that each diagram is read in the context
+# of the API it illustrates.
+#
+# Keep one version per line, and keep "(<version>)" in the link target: the central publication
+# script retires an obsolete patch by deleting the line that mentions it.
 for directory in $sorted_dirs
 do
-  # If this is the stable version, write latest-stable entry first
+  badge=""
   if [ "$directory" = "$latest_stable" ]; then
-      echo "| **$directory (latest stable)** | [API documentation](latest-stable) |" >> list_versions.md
+      # The fixed link is the one to cite elsewhere, but the row shows the real version number.
+      link='['"$directory"'](latest-stable "Fixed link to the latest stable version")'
+      badge=' <span class="doc-badge doc-badge--stable">stable</span>'
   else
-      echo "| $directory | [API documentation]($directory) |" >> list_versions.md
+      link='['"$directory"']('"$directory"')'
+      case "$directory" in
+        *-SNAPSHOT) badge=' <span class="doc-badge doc-badge--snapshot">snapshot</span>' ;;
+      esac
   fi
-
+  echo "| $link$badge |" >> list_versions.md
 done
+
+# Names the table so the layout can size it by its content rather than stretch it across the page.
+echo "{: .doc-versions}" >> list_versions.md
 
 echo "Computed all versions:"
 cat list_versions.md

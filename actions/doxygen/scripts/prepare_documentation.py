@@ -119,15 +119,31 @@ class DocumentationManager:
         latest_stable = next((v for v in sorted_versions if "-SNAPSHOT" not in v), None)
 
         with versions_file.open("w") as f:
-            f.write("| Version | Documents |\n")
-            f.write("|:---:|---|\n")
+            print("| Version |", file=f)
+            print("|:---|", file=f)
 
             for version in sorted_versions:
-                # Write latest-stable first if this is the stable version
+                # One column: the version number is itself the link, since there is exactly
+                # one document per version. Keep one version per line and keep "(<version>)"
+                # in the link target -- the central publication script retires an obsolete
+                # patch by deleting the line that mentions it.
                 if version == latest_stable:
-                    f.write(f"| **latest-stable ({latest_stable})** | [API documentation](latest-stable) |\n")
+                    # The fixed link is the one to cite elsewhere, but the row shows the
+                    # real version number.
+                    link = (
+                        f'[{version}](latest-stable "Fixed link to the latest stable version")'
+                    )
+                    badge = ' <span class="doc-badge doc-badge--stable">stable</span>'
+                elif version.endswith("-SNAPSHOT"):
+                    link = f"[{version}]({version})"
+                    badge = ' <span class="doc-badge doc-badge--snapshot">snapshot</span>'
                 else:
-                    f.write(f"| {version} | [API documentation]({version}) |\n")
+                    link = f"[{version}]({version})"
+                    badge = ""
+                print(f"| {link}{badge} |", file=f)
+
+            # Names the table so the layout sizes it by its content, not the page width.
+            print("{: .doc-versions}", file=f)
 
     def prepare_documentation(self, version: str = None):
         """
