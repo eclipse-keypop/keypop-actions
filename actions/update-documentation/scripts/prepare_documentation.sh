@@ -42,7 +42,7 @@ if [ ! -z "$latest_stable" ]; then
 fi
 
 echo "Update versions list..."
-echo "| Version |" > list_versions.md
+echo "| Available versions |" > list_versions.md
 echo "|:---|" >> list_versions.md
 
 # Get the list of directories sorted by version number

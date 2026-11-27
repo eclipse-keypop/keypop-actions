@@ -119,7 +119,7 @@ class DocumentationManager:
         latest_stable = next((v for v in sorted_versions if "-SNAPSHOT" not in v), None)
 
         with versions_file.open("w") as f:
-            print("| Version |", file=f)
+            print("| Available versions |", file=f)
             print("|:---|", file=f)
 
             for version in sorted_versions:
